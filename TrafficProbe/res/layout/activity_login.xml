@@ -1,0 +1,83 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#444"
+    android:contentDescription="logo"
+    tools:context=".MainActivity" >
+
+    <ImageView
+        android:id="@+id/imageView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:paddingRight="5dp"
+        android:paddingTop="5dp"
+        android:src="@drawable/logo" />
+
+    <EditText
+        android:id="@+id/bodyNumberEdit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignRight="@+id/driverNameEdit"
+        android:layout_below="@+id/TextView01"
+        android:layout_marginLeft="10dp"
+        android:maxLines="1"
+        android:singleLine = "true" >
+        
+    </EditText>
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/bodyNumberEdit"
+        android:layout_below="@+id/bodyNumberEdit"
+        android:text="Vehicle Body Number"
+        android:textColor="#aaa" />
+
+    <EditText
+        android:id="@+id/driverNameEdit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/textView1"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_toLeftOf="@+id/imageView1"
+        android:maxLines="1" 
+        android:singleLine = "true">
+
+        <requestFocus />
+        </EditText>
+
+    <Button
+        android:id="@+id/loginButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@+id/bodyNumberEdit"
+        android:layout_below="@+id/textView2"
+        android:text="Login" />
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignRight="@+id/driverNameEdit"
+        android:text="trafficProbe"
+        android:textColor="#aaa"
+        android:textSize="30sp" />
+
+    <TextView
+        android:id="@+id/TextView01"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/driverNameEdit"
+        android:layout_below="@+id/driverNameEdit"
+        android:text="Driver Name"
+        android:textColor="#aaa" />
+
+</RelativeLayout>

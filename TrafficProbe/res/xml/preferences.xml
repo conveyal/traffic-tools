@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+   
+ <PreferenceCategory
+   android:summary="Configuration for GPS data."
+   android:title="GPS Settings" >
+    <CheckBoxPreference
+        android:key="bootstart"
+        android:title="@string/bootstart"
+        android:summary="@string/bootstart_summ"
+        android:defaultValue="true"
+        	 />
+    
+    <CheckBoxPreference
+        android:key="websockets"
+        android:title="Use Websockets"
+        android:summary="Use Websockets to relay data to server."
+        android:defaultValue="true" 
+         />
+    
+    <CheckBoxPreference
+        android:key="sendDiagnosticData"
+        android:title="Send Diagnostics"
+        android:summary="Transmit diagnostic information to server."
+        android:defaultValue="false" 
+        />
+    
+    <com.conveyal.trafficprobe.IntEditTextPreference
+    android:key="gpsFrequency"
+    android:title="GPS Update Frequency"
+    android:summary="Seconds between GPS updates."
+    android:defaultValue="5" 
+    android:numeric="integer"
+    android:maxLength="2" />
+    
+        <com.conveyal.trafficprobe.IntEditTextPreference
+    android:key="transmitFrequency"
+    android:title="Data Transmit Frequency"
+    android:summary="Seconds between sending data to server."
+    android:defaultValue="30" 
+    android:numeric="integer"
+    android:maxLength="2" />
+        
+   </PreferenceCategory>
+</PreferenceScreen>

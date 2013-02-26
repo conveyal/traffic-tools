@@ -1,0 +1,142 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#444"
+    android:contentDescription="logo"
+    tools:context=".MainActivity" >
+
+    <ImageView
+        android:id="@+id/imageView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="10dp"
+        android:paddingRight="5dp"
+        android:paddingTop="5dp"
+        android:src="@drawable/logo" />
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/imageView1"
+        android:layout_toLeftOf="@+id/imageView1"
+        android:text="trafficProbe"
+        android:textColor="#aaa"
+        android:textSize="30sp" />
+
+    <ImageButton
+        android:id="@+id/mailButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:background="@null"
+        android:paddingBottom="15dp"
+        android:src="@drawable/mail" />
+
+    <ImageButton
+        android:id="@+id/settingsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:background="@null"
+        android:paddingBottom="15dp"
+        android:paddingRight="15dp"
+        android:src="@drawable/settings" />
+
+    <ImageButton
+        android:id="@+id/mapButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:background="@null"
+        android:paddingBottom="15dp"
+        android:paddingLeft="15dp"
+        android:src="@drawable/globe" />
+
+    <TextView
+        android:id="@+id/gpsLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView1"
+        android:layout_marginTop="31dp"
+        android:layout_toRightOf="@+id/mapButton"
+        android:text="gps status:"
+        android:textColor="#aaa" />
+
+    <TextView
+        android:id="@+id/network"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/gps"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/gps"
+        android:text="searching..."
+        android:textColor="#fff" />
+
+    <TextView
+        android:id="@+id/networkLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@+id/gpsLabel"
+        android:layout_below="@+id/gpsLabel"
+        android:text="network status:"
+        android:textColor="#aaa" />
+
+    <TextView
+        android:id="@+id/gps"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/gpsLabel"
+        android:layout_alignBottom="@+id/gpsLabel"
+        android:layout_alignParentRight="true"
+        android:layout_toRightOf="@+id/gpsLabel"
+        android:text="searching..."
+        android:textColor="#fff" />
+
+    <ImageButton
+        android:id="@+id/changeLoginButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="15dp"
+        android:background="@null"
+        android:src="@drawable/change" />
+
+    <TextView
+        android:id="@+id/driverText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/operatorText"
+        android:layout_below="@+id/operatorText"
+        android:text="driver..."
+        android:textColor="#fff" />
+
+    <TextView
+        android:id="@+id/bodyNumberText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/driverText"
+        android:layout_below="@+id/driverText"
+        android:text="bodyNumber..."
+        android:textColor="#fff" />
+
+    <TextView
+        android:id="@+id/operatorText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_toRightOf="@+id/changeLoginButton"
+        android:text="unregistered"
+        android:textColor="#fff" />
+
+</RelativeLayout>

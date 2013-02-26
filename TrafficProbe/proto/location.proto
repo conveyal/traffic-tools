@@ -1,0 +1,21 @@
+package trafficprobe;
+
+option java_package = "com.conveyal.trafficprobe";
+option java_outer_classname = "TrafficProbeProtos";
+option optimize_for = LITE_RUNTIME;
+
+message LocationUpdate {
+  message Location {
+    required float lat = 5;
+    required float lon = 6;
+    optional int32 timeoffset = 1;
+    optional int32 velocity = 2;
+    optional int32 accuracy = 3;
+    optional int32 heading = 4;
+  }
+  
+  required int64 time = 1;
+  required int64 phone = 2;
+  repeated Location location = 3;
+  
+}

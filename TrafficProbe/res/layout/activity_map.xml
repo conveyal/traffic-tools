@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <RelativeLayout
+       android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+		android:id="@+id/mainMapView" />
+
+    <RelativeLayout
+        android:id="@+id/Rel"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@+id/tbl"
+        android:orientation="vertical" >
+
+        <Button
+            android:id="@+id/panicButton"
+            android:onClick="panicToggle"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:textSize="18dp"
+            android:textStyle="bold"
+           	android:typeface="sans" 
+            android:text="Panic" />
+
+        <ImageButton
+            android:id="@+id/centerButton"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:background="@null"
+            android:onClick="centerView"
+            android:src="@drawable/pushpin"
+            android:text="Button" />
+           
+     </RelativeLayout>
+
+</RelativeLayout>

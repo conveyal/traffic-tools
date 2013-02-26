@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">TrafficProbe</string>
+
+
+	<string name="bootstart">Start on Boot</string>
+	<string name="bootstart_summ">Automatically starts GPS logging.</string>
+    	
+</resources>
