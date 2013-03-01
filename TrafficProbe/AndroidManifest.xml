@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.conveyal.trafficprobe"
-    android:versionCode="1"
-    android:versionName="1.0.0" >
+    android:versionCode="5"
+    android:versionName="1.0.8" >
 
     <uses-sdk
         android:minSdkVersion="8"
@@ -63,12 +63,18 @@
 		    </intent-filter>  
 		</receiver>	
 		
+        <receiver android:name="com.conveyal.trafficprobe.SendLocationUpdateReciever">  
+
+		</receiver>
+		
 		<service android:name="com.conveyal.trafficprobe.LocationService">
             <intent-filter>
                 <action android:name="com.conveyal.trafficprobe.LocationService"/>
             </intent-filter>
         </service>
        
+		
+		
     </application>
 
 </manifest>

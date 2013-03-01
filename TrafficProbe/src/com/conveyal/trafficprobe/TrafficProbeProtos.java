@@ -24,6 +24,26 @@ public final class TrafficProbeProtos {
         getLocationList();
     com.conveyal.trafficprobe.TrafficProbeProtos.LocationUpdate.Location getLocation(int index);
     int getLocationCount();
+    
+    // optional float battery = 4;
+    boolean hasBattery();
+    float getBattery();
+    
+    // optional int32 network = 5;
+    boolean hasNetwork();
+    int getNetwork();
+    
+    // optional bool charging = 6;
+    boolean hasCharging();
+    boolean getCharging();
+    
+    // optional float level = 7;
+    boolean hasLevel();
+    float getLevel();
+    
+    // optional string gps = 8;
+    boolean hasGps();
+    String getGps();
   }
   public static final class LocationUpdate extends
       com.google.protobuf.GeneratedMessageLite
@@ -669,10 +689,87 @@ public final class TrafficProbeProtos {
       return location_.get(index);
     }
     
+    // optional float battery = 4;
+    public static final int BATTERY_FIELD_NUMBER = 4;
+    private float battery_;
+    public boolean hasBattery() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public float getBattery() {
+      return battery_;
+    }
+    
+    // optional int32 network = 5;
+    public static final int NETWORK_FIELD_NUMBER = 5;
+    private int network_;
+    public boolean hasNetwork() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public int getNetwork() {
+      return network_;
+    }
+    
+    // optional bool charging = 6;
+    public static final int CHARGING_FIELD_NUMBER = 6;
+    private boolean charging_;
+    public boolean hasCharging() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    public boolean getCharging() {
+      return charging_;
+    }
+    
+    // optional float level = 7;
+    public static final int LEVEL_FIELD_NUMBER = 7;
+    private float level_;
+    public boolean hasLevel() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    public float getLevel() {
+      return level_;
+    }
+    
+    // optional string gps = 8;
+    public static final int GPS_FIELD_NUMBER = 8;
+    private java.lang.Object gps_;
+    public boolean hasGps() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    public String getGps() {
+      java.lang.Object ref = gps_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          gps_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getGpsBytes() {
+      java.lang.Object ref = gps_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        gps_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    
     private void initFields() {
       time_ = 0L;
       phone_ = 0L;
       location_ = java.util.Collections.emptyList();
+      battery_ = 0F;
+      network_ = 0;
+      charging_ = false;
+      level_ = 0F;
+      gps_ = "";
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -709,6 +806,21 @@ public final class TrafficProbeProtos {
       for (int i = 0; i < location_.size(); i++) {
         output.writeMessage(3, location_.get(i));
       }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFloat(4, battery_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeInt32(5, network_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeBool(6, charging_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeFloat(7, level_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeBytes(8, getGpsBytes());
+      }
     }
     
     private int memoizedSerializedSize = -1;
@@ -728,6 +840,26 @@ public final class TrafficProbeProtos {
       for (int i = 0; i < location_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(3, location_.get(i));
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeFloatSize(4, battery_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(5, network_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(6, charging_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeFloatSize(7, level_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(8, getGpsBytes());
       }
       memoizedSerializedSize = size;
       return size;
@@ -837,6 +969,16 @@ public final class TrafficProbeProtos {
         bitField0_ = (bitField0_ & ~0x00000002);
         location_ = java.util.Collections.emptyList();
         bitField0_ = (bitField0_ & ~0x00000004);
+        battery_ = 0F;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        network_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        charging_ = false;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        level_ = 0F;
+        bitField0_ = (bitField0_ & ~0x00000040);
+        gps_ = "";
+        bitField0_ = (bitField0_ & ~0x00000080);
         return this;
       }
       
@@ -883,6 +1025,26 @@ public final class TrafficProbeProtos {
           bitField0_ = (bitField0_ & ~0x00000004);
         }
         result.location_ = location_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.battery_ = battery_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.network_ = network_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.charging_ = charging_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.level_ = level_;
+        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        result.gps_ = gps_;
         result.bitField0_ = to_bitField0_;
         return result;
       }
@@ -904,6 +1066,21 @@ public final class TrafficProbeProtos {
             location_.addAll(other.location_);
           }
           
+        }
+        if (other.hasBattery()) {
+          setBattery(other.getBattery());
+        }
+        if (other.hasNetwork()) {
+          setNetwork(other.getNetwork());
+        }
+        if (other.hasCharging()) {
+          setCharging(other.getCharging());
+        }
+        if (other.hasLevel()) {
+          setLevel(other.getLevel());
+        }
+        if (other.hasGps()) {
+          setGps(other.getGps());
         }
         return this;
       }
@@ -957,6 +1134,31 @@ public final class TrafficProbeProtos {
               com.conveyal.trafficprobe.TrafficProbeProtos.LocationUpdate.Location.Builder subBuilder = com.conveyal.trafficprobe.TrafficProbeProtos.LocationUpdate.Location.newBuilder();
               input.readMessage(subBuilder, extensionRegistry);
               addLocation(subBuilder.buildPartial());
+              break;
+            }
+            case 37: {
+              bitField0_ |= 0x00000008;
+              battery_ = input.readFloat();
+              break;
+            }
+            case 40: {
+              bitField0_ |= 0x00000010;
+              network_ = input.readInt32();
+              break;
+            }
+            case 48: {
+              bitField0_ |= 0x00000020;
+              charging_ = input.readBool();
+              break;
+            }
+            case 61: {
+              bitField0_ |= 0x00000040;
+              level_ = input.readFloat();
+              break;
+            }
+            case 66: {
+              bitField0_ |= 0x00000080;
+              gps_ = input.readBytes();
               break;
             }
           }
@@ -1094,6 +1296,126 @@ public final class TrafficProbeProtos {
         location_.remove(index);
         
         return this;
+      }
+      
+      // optional float battery = 4;
+      private float battery_ ;
+      public boolean hasBattery() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      public float getBattery() {
+        return battery_;
+      }
+      public Builder setBattery(float value) {
+        bitField0_ |= 0x00000008;
+        battery_ = value;
+        
+        return this;
+      }
+      public Builder clearBattery() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        battery_ = 0F;
+        
+        return this;
+      }
+      
+      // optional int32 network = 5;
+      private int network_ ;
+      public boolean hasNetwork() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      public int getNetwork() {
+        return network_;
+      }
+      public Builder setNetwork(int value) {
+        bitField0_ |= 0x00000010;
+        network_ = value;
+        
+        return this;
+      }
+      public Builder clearNetwork() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        network_ = 0;
+        
+        return this;
+      }
+      
+      // optional bool charging = 6;
+      private boolean charging_ ;
+      public boolean hasCharging() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      public boolean getCharging() {
+        return charging_;
+      }
+      public Builder setCharging(boolean value) {
+        bitField0_ |= 0x00000020;
+        charging_ = value;
+        
+        return this;
+      }
+      public Builder clearCharging() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        charging_ = false;
+        
+        return this;
+      }
+      
+      // optional float level = 7;
+      private float level_ ;
+      public boolean hasLevel() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      public float getLevel() {
+        return level_;
+      }
+      public Builder setLevel(float value) {
+        bitField0_ |= 0x00000040;
+        level_ = value;
+        
+        return this;
+      }
+      public Builder clearLevel() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        level_ = 0F;
+        
+        return this;
+      }
+      
+      // optional string gps = 8;
+      private java.lang.Object gps_ = "";
+      public boolean hasGps() {
+        return ((bitField0_ & 0x00000080) == 0x00000080);
+      }
+      public String getGps() {
+        java.lang.Object ref = gps_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          gps_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      public Builder setGps(String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000080;
+        gps_ = value;
+        
+        return this;
+      }
+      public Builder clearGps() {
+        bitField0_ = (bitField0_ & ~0x00000080);
+        gps_ = getDefaultInstance().getGps();
+        
+        return this;
+      }
+      void setGps(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000080;
+        gps_ = value;
+        
       }
       
       // @@protoc_insertion_point(builder_scope:trafficprobe.LocationUpdate)

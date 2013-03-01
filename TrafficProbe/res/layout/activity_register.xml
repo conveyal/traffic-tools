@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_toLeftOf="@+id/imageView1"
-        android:text="trafficProbe"
+        android:text="TrafficProbe"
         android:textColor="#aaa"
         android:textSize="30sp" />
 

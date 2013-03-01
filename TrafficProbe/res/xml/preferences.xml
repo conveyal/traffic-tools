@@ -15,7 +15,7 @@
         android:key="websockets"
         android:title="Use Websockets"
         android:summary="Use Websockets to relay data to server."
-        android:defaultValue="true" 
+        android:defaultValue="false" 
          />
     
     <CheckBoxPreference

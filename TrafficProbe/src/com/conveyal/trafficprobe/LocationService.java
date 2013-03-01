@@ -1,13 +1,16 @@
 package com.conveyal.trafficprobe;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.conveyal.trafficprobe.TrafficProbeProtos.LocationUpdate;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.JsonHttpResponseHandler;
@@ -18,18 +21,32 @@ import de.tavendo.autobahn.WebSocketException;
 import de.tavendo.autobahn.WebSocketHandler;
 
 import android.app.AlarmManager;
+import android.app.Application;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.location.GpsSatellite;
+import android.location.GpsStatus;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
+import android.location.LocationProvider;
+import android.os.BatteryManager;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.telephony.PhoneStateListener;
+import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
@@ -42,6 +59,10 @@ public class LocationService extends Service {
 	private static String 	URL_BASE 				= "http://cebutraffic.org/";
 	
 	private static String  	WS_LOCATION_URL			= "ws://cebutraffic.org/ws/location";
+	private static String  	HTTP_LOCATION_URL		= "http://cebutraffic.org/api/locationPb";
+	
+	//private static String  	WS_LOCATION_URL			= "ws://192.168.120.145:9001/ws/location";
+	//private static String  	HTTP_LOCATION_URL		= "http://192.168.120.145:9001/api/locationPb";
 	
 	private static int 		NOTIFICATION_ID			= 348723201;
 	
@@ -62,25 +83,46 @@ public class LocationService extends Service {
     private static String 	gpsStatus 		= "searching...";
     private static String 	networkStatus 	= "connecting...";
     
+    
     public static ArrayList<Operator> operatorList = new ArrayList<Operator>();    
     
 	
+    private static Application appContext;
 	private final IBinder binder = new LocationServiceBinder();
 	private static ILocationServiceClient mainServiceClient;
 	private ProbeLocationListener probeLocationListener;
 	
+	private static PendingIntent startLocationUpdateAlarmIntent = null;
+	
 	private LocationManager gpsLocationManager;
 	private NotificationManager gpsNotificationManager;
-	private AlarmManager 	retryGpsAlarmManager;
+	private static AlarmManager 	alarmManager;
+	private PackageManager packageManager   = null;
+	private String packageName = null;
+	private static SharedPreferences prefsManager; 
+	
+	private static Intent batteryStatus;
+	private static int signalStrength;
 	
 	private Date lastTransmitTime = null;
-
-	private boolean gpsEnabled;
 	
-	private List<Location> locationUpdateList = Collections.synchronizedList(new ArrayList<Location>());
+	private static ProbeWebsocket websocket;
 
-	private final WebSocketConnection websocketConnection = new WebSocketConnection();
-	 
+	private static Integer transmitFrequency;
+	private static Integer gpsFrequency;
+	
+	private static boolean sendDiagnosticData;
+	private static boolean gpsEnabled;
+	private static boolean useWebsockets;
+	
+	private static List<Location> locationUpdateList = Collections.synchronizedList(new ArrayList<Location>());
+
+	private class AppPhoneStateListener extends PhoneStateListener {
+		@Override
+		public void onSignalStrengthsChanged(SignalStrength signalStrength) {
+			LocationService.signalStrength = signalStrength.getGsmSignalStrength();	        
+		}
+	}
 	
 	public static byte[] createLocationUpdate(Long phoneId, List<Location> locations)
 	{
@@ -88,6 +130,28 @@ public class LocationService extends Service {
 		
 		Long firstUpdate =  null;
 		Long previousUpdate =  null;
+		
+		
+		if(sendDiagnosticData) {
+
+			// Are we charging / charged?
+			int status = batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+			Boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+			                     status == BatteryManager.BATTERY_STATUS_FULL;
+
+			// Get battery charge level
+			int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+			int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+			Double batteryPct = level / (double)scale;
+			
+			locationUpdateBuilder.setCharging(isCharging);
+			locationUpdateBuilder.setLevel(batteryPct.floatValue());
+			locationUpdateBuilder.setNetwork(signalStrength);
+			locationUpdateBuilder.setGps(gpsStatus);
+			
+		}
+		
 		
 		for(Location location : locations)
 		{
@@ -124,7 +188,9 @@ public class LocationService extends Service {
 			previousUpdate = location.getTime();
 		}
 		
-		if(firstUpdate != null)
+		if(firstUpdate == null)
+			firstUpdate = new Date().getTime();
+			
 		locationUpdateBuilder.setTime(firstUpdate);
 
 		locationUpdateBuilder.setPhone(phoneId);
@@ -145,10 +211,14 @@ public class LocationService extends Service {
         mainServiceClient = mainForm;
     }
 	
+	
+	
 	@Override
     public void onCreate()
     {
         Log.i("LocationService", "onCreate");
+        
+        appContext = this.getApplication();
         
         try {
         	appVersion = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
@@ -156,8 +226,8 @@ public class LocationService extends Service {
         catch(Exception e){
         	Log.e("LocationService", "onCreate: couldn't fetch app version");
         }
-        
-        retryGpsAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+           	
+        alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         gpsNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         
         if(imei == null)
@@ -168,8 +238,19 @@ public class LocationService extends Service {
         
         doAuthenticate();
         
+        IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+		batteryStatus = getApplicationContext().registerReceiver(null, ifilter);
+		
+		AppPhoneStateListener phoneStateListener  = new AppPhoneStateListener();
+		TelephonyManager telephonyManager = ( TelephonyManager )getSystemService(Context.TELEPHONY_SERVICE);
+		telephonyManager.listen(phoneStateListener ,PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
         
+        packageManager = getPackageManager();
         Intent contentIntent = new Intent(this, ProbeMainActivity.class);
+        
+        packageName = getPackageName();
+        
+        websocket = new ProbeWebsocket();
 
         PendingIntent pending = PendingIntent.getActivity(getApplicationContext(), 0, contentIntent,
                 android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -183,14 +264,77 @@ public class LocationService extends Service {
 
         gpsNotificationManager.notify(NOTIFICATION_ID, notification);
    
-
+        SharedPreferences.OnSharedPreferenceChangeListener prefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+		 	@Override
+        	public void onSharedPreferenceChanged(SharedPreferences prefs,String key) {
+		 		
+		 		if (key.equals("websockets")) {
+		 			useWebsockets = prefsManager.getBoolean("websockets", false);
+		 			
+		 			if(useWebsockets)
+		 				websocket.start();
+		 			else
+		 				websocket.stop();
+		 			
+   			 	} 
+		 		else if(key.equals("transmitFrequency")) {
+		 			transmitFrequency = prefsManager.getInt("transmitFrequency", MIN_TRANSMIT_INTERVAL);
+		 			
+		 		}
+		 		else if(key.equals("gpsFrequency")) {
+		 			gpsFrequency = prefsManager.getInt("gpsFrequency", MIN_TRANSMIT_INTERVAL);
+		 			
+		 		}
+   		 	}
+   	 	};
+        
+   		prefsManager = PreferenceManager.getDefaultSharedPreferences(this);
+    	prefsManager.registerOnSharedPreferenceChangeListener(prefListener);
+        
+    	gpsFrequency = prefsManager.getInt("gpsFrequency", GPS_UPDATE_INTERVAL);
+    	useWebsockets = prefsManager.getBoolean("websockets", false);
+    	transmitFrequency = prefsManager.getInt("transmitFrequency", MIN_TRANSMIT_INTERVAL);
+    	sendDiagnosticData = prefsManager.getBoolean("sendDiagnosticData", false);
+    	
         startForeground(NOTIFICATION_ID, notification);
     	
     	startGps();
     	
-    	startWebsocketConnection();
+    	startAlarm();
+    	
+    	if(useWebsockets) {
+    		websocket.start();
+    	}
+    	
+    	
         
     }
+	
+	public static void updatePreferences(SharedPreferences prefs,String key) {
+ 		
+ 		if (key.equals("websockets")) {
+ 			useWebsockets = prefsManager.getBoolean("websockets", false);
+ 			
+ 			if(useWebsockets)
+ 				websocket.start();
+ 			else
+ 				websocket.stop();
+ 			
+		 	} 
+ 		else if(key.equals("transmitFrequency")) {
+ 			transmitFrequency = prefsManager.getInt("transmitFrequency", MIN_TRANSMIT_INTERVAL);
+ 			
+ 			startAlarm();
+ 			
+ 		}
+ 		else if(key.equals("gpsFrequency")) {
+ 			gpsFrequency = prefsManager.getInt("gpsFrequency", MIN_TRANSMIT_INTERVAL);
+ 			
+ 		}
+ 		else if(key.equals("sendDiagnosticData")) {
+ 			sendDiagnosticData = prefsManager.getBoolean("sendDiagnosticData", false);
+ 		}
+	 	}
 	
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
@@ -198,9 +342,6 @@ public class LocationService extends Service {
 
     	Log.i("LocationService", "onStartCommand");
     	handleIntent(intent);
-    	
-    	
-    	
     	
         return START_STICKY;
     }
@@ -248,10 +389,12 @@ public class LocationService extends Service {
     
     // authentication
     
-static public void doAuthenticate() {
+    static public void doAuthenticate() {
 		
     	if(loggedIn)
     		return;
+    	
+    	Log.i("LocationService", "doAuthenticate");
     	
     	RequestParams params = new RequestParams();
     	
@@ -259,6 +402,7 @@ static public void doAuthenticate() {
     	params.put("version", appVersion);
     	
 		AsyncHttpClient client = new AsyncHttpClient();
+		client.setUserAgent("tp" + appVersion);
 		client.get(URL_BASE + "api/operator", params,  new JsonHttpResponseHandler() {
 		    @Override
 		    
@@ -270,6 +414,8 @@ static public void doAuthenticate() {
 		    		operator = response.getString("name");
 		    		phoneId = response.getLong("id");
 		    		
+		    		Log.i("LocationService", "doAuthenticate authenticated " + phoneId);
+		    		
 		    		if(LocationService.mainServiceClient != null) {
 		    			LocationService.mainServiceClient.setDriver(driver);
 		    			LocationService.mainServiceClient.setBodyNumber(bodyNumber);
@@ -278,8 +424,8 @@ static public void doAuthenticate() {
 		    		
 		    		loggedIn = true;
 		    	}
-		    	catch(Exception e) {
-		    		Log.e("MainAcivity", "registerPhone: Unable to get operator name from response object", e);
+		    	catch(Exception e) {		    		
+		    		Log.e("LocationService", "registerPhone: Unable to get operator name from response object", e);
 		    		doLoginPrompt();
 		    	}
 		    }
@@ -301,6 +447,7 @@ static public void doAuthenticate() {
    		params.put("vehicle", bodyNumber);
     	
 		AsyncHttpClient client = new AsyncHttpClient();
+		client.setUserAgent("tp" + appVersion);
 		client.post(URL_BASE + "api/login", params,  new JsonHttpResponseHandler() {
 		    @Override
 		    
@@ -340,10 +487,9 @@ static public void doAuthenticate() {
     }
     
     static public void doRegisterPrompt() {
-    		
-
     	
 		AsyncHttpClient client = new AsyncHttpClient();
+		client.setUserAgent("tp" + appVersion);
 		client.get(URL_BASE + "api/register",  new JsonHttpResponseHandler() {
 		    @Override
 		    
@@ -368,8 +514,8 @@ static public void doAuthenticate() {
 		    			  
 		    				operatorList.add(operator);
 		    		   } 
-		    			
-		    			mainServiceClient.showRegistration();
+		    			if(mainServiceClient != null)
+		    				mainServiceClient.showRegistration();
 		    		}
 		    		else
 		    		{
@@ -400,6 +546,7 @@ static public void doAuthenticate() {
 	    	params.put("operator", operatorId.toString());
 	    	
 			AsyncHttpClient client = new AsyncHttpClient();
+			client.setUserAgent("tp" + appVersion);
 			client.post(URL_BASE + "api/register", params,  new AsyncHttpResponseHandler() {
 			    @Override
 			    
@@ -423,18 +570,21 @@ static public void doAuthenticate() {
     	// handle received intents
     }
     
-    private void sendLocationList()
+    public static void sendLocationList()
     {
     	Log.i("LocationService", "sendLocationList: " + locationUpdateList.size() + " items pending");
-    	   	
-    	if(locationUpdateList.size() == 0)
+    	
+    	
+    	if(phoneId == null)
     		return;
     	
-    	if(lastTransmitTime == null)
+    	if(locationUpdateList.size() == 0 && !sendDiagnosticData)
+    		return;
+    	
+    	/*if(lastTransmitTime == null)
     		lastTransmitTime = new Date();
     	
-    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-    	Integer transmitFrequency = prefs.getInt("transmitFrequency", MIN_TRANSMIT_INTERVAL);
+    	
     	
     	synchronized(lastTransmitTime)
     	{
@@ -448,7 +598,7 @@ static public void doAuthenticate() {
     		
     		// sending now
     		lastTransmitTime = currentTime;
-    	}
+    	}*/
     
     	List<Location> locations = new ArrayList<Location>();
     	
@@ -467,8 +617,38 @@ static public void doAuthenticate() {
     	}
     	
     	byte[] data = createLocationUpdate(phoneId, locations);
+    
     	
-    	websocketConnection.sendBinaryMessage(data);
+    	if(useWebsockets) {
+    		websocket.sendBinaryMessage(data);
+    	}
+    	else {
+    		// use http with binary payload
+    		ByteArrayInputStream dataStream = new ByteArrayInputStream(data);
+    		
+    		RequestParams params = new RequestParams();
+    		params.put("data", dataStream);
+    		
+    		AsyncHttpClient client = new AsyncHttpClient();
+    		client.setUserAgent("tp" + appVersion);
+    		client.post(HTTP_LOCATION_URL, params, new AsyncHttpResponseHandler() {
+    			
+                @Override
+                public void onSuccess(String response) {
+                	networkStatus = "http";
+ 	            	if(mainServiceClient != null)
+	 	            	LocationService.mainServiceClient.setNetworkStatus(networkStatus);
+                }
+                
+                @Override
+                public void onFailure(Throwable error, String content) {
+                	networkStatus = "http failure";
+ 	            	if(mainServiceClient != null)
+	 	            	LocationService.mainServiceClient.setNetworkStatus(networkStatus);
+    		    }
+            });
+    		
+    	}
     	
     	Log.i("LocationService", "sendLocationList: seralized " + locationUpdateList.size() + " into " + data.length + "bytes.");
     	
@@ -484,69 +664,21 @@ static public void doAuthenticate() {
     	if(mainServiceClient != null)
     		mainServiceClient.setGpsStatus(gpsStatus);
     	
-    	//if(MIN_ACCURACY < Math.abs(location.getAccuracy()))
-    	//	Log.i("LocationService", "onLocationChanged: gps error exceeds minimum " + location.getAccuracy());
-    	//else
-    		locationUpdateList.add(location);
-    	
-    	sendLocationList();
+    	locationUpdateList.add(location);
     	
     }
     
     
-    private void startWebsocketConnection() {
-   	 
- 	   final String wsuri = WS_LOCATION_URL;
- 	 
- 	   try {
- 		   
- 		  websocketConnection.connect(wsuri, new WebSocketHandler() {
- 	 
- 	         @Override
- 	         public void onOpen() {
- 	        	 Log.d("startWebsocketConnection", "Status: Connected to " + wsuri);
- 	        	 networkStatus = "connected";
- 	        	 
- 	        	 if(mainServiceClient != null)
- 	        		 LocationService.mainServiceClient.setNetworkStatus(networkStatus);
- 	        	 
- 	        	 websocketConnection.sendTextMessage("CONNECTION_TEST");
- 	         }
- 	 
- 	         @Override
- 	         public void onTextMessage(String payload) {
- 	           Log.d("startWebsocketConnection", "Got echo: " + payload);
- 	          
- 	          networkStatus = "connected";
- 	           LocationService.mainServiceClient.setNetworkStatus(networkStatus);
- 	         }
- 	 
- 	         @Override
- 	         public void onClose(int code, String reason) {
- 	        	 
- 	            Log.d("startWebsocketConnection", "Connection lost.");
- 	           
- 	            networkStatus = "re-connecting...";
- 	            LocationService.mainServiceClient.setNetworkStatus(networkStatus);
- 	           
- 	            try {
-					Thread.sleep(5000);
-				} catch (InterruptedException e) {
-					Log.d("startWebsocketConnection", e.toString());
-					e.printStackTrace();
-				}
- 	            
- 	            startWebsocketConnection();
- 	         }
- 	      });
- 	   } catch (WebSocketException e) {
- 	 
- 	      Log.d("startWebsocketConnection", e.toString());
- 	      
- 	      LocationService.mainServiceClient.setNetworkStatus("error");
- 	   }
- 	}
+    private static void startAlarm() {
+     	
+     	if(startLocationUpdateAlarmIntent != null)
+     		LocationService.alarmManager.cancel(startLocationUpdateAlarmIntent);
+      
+         startLocationUpdateAlarmIntent = PendingIntent.getBroadcast(appContext, 0, new Intent(appContext, SendLocationUpdateReciever.class), 0);
+         LocationService.alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(),  transmitFrequency * 1000, startLocationUpdateAlarmIntent);
+     }
     
+     
     private void startGps()
     {
     	Log.i("LocationService", "startGps");
@@ -561,7 +693,7 @@ static public void doAuthenticate() {
     	
     	if (probeLocationListener == null)
         {
-    		probeLocationListener = new ProbeLocationListener(this);
+    		probeLocationListener = new ProbeLocationListener();
         }
         
         // connect location manager
@@ -570,10 +702,7 @@ static public void doAuthenticate() {
         gpsEnabled = gpsLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         
         if(gpsEnabled)
-        {
-        	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        	Integer gpsFrequency = prefs.getInt("gpsFrequency", GPS_UPDATE_INTERVAL);
-        	
+        {	
         	Log.i("LocationService", "startGps attaching listeners, frequency: " + gpsFrequency);
         	// request gps location and status updates
         	
@@ -638,6 +767,7 @@ static public void doAuthenticate() {
 
     }
 	
+    
 	
 	public class LocationServiceBinder extends Binder
     {
@@ -647,4 +777,229 @@ static public void doAuthenticate() {
             return LocationService.this;
         }
     }
+	
+	
+	private class ProbeLocationListener implements LocationListener, GpsStatus.Listener
+	{
+
+		@Override
+	    public void onLocationChanged(Location location)
+	    {
+	        try
+	        {
+	            if (location != null)
+	            {
+	            	Log.i("ProbeLocationListener", "onLocationChanged");
+	               
+	            	LocationService.this.onLocationChanged(location);
+	            }
+
+	        }
+	        catch (Exception ex)
+	        {
+	        	Log.e("ProbeLocationListener", "onLocationChanged failed", ex);
+	        }
+
+	    }
+
+		@Override
+	    public void onProviderDisabled(String provider)
+	    {
+	    	Log.i("ProbeLocationListener", "onProviderDisabled");
+	    	//this.restartGps();
+	    }
+
+		@Override
+	    public void onProviderEnabled(String provider)
+	    {
+	    	Log.i("ProbeLocationListener", "onProviderEnabled");
+	    	//locationService.restartGps();
+	    }
+		
+		@Override
+	    public void onStatusChanged(String provider, int status, Bundle extras)
+	    {
+	        if (status == LocationProvider.OUT_OF_SERVICE)
+	        {
+	        	Log.d("ProbeLocationListener", "onStatusChanged: " + provider + " OUT_OF_SERVICE");
+	        	gpsStatus = "out of service";
+	        	if(mainServiceClient != null)
+	        		mainServiceClient.setGpsStatus(gpsStatus);
+	        }
+
+	        if (status == LocationProvider.AVAILABLE)
+	        {
+	        	Log.d("ProbeLocationListener", "onStatusChanged: " + provider + " AVAILABLE");
+	        	gpsStatus = "lock";
+	        	if(mainServiceClient != null)
+	        		mainServiceClient.setGpsStatus(gpsStatus);
+	        }
+
+	        if (status == LocationProvider.TEMPORARILY_UNAVAILABLE)
+	        {
+	        	Log.d("ProbeLocationListener", "onStatusChanged: " + provider + " TEMPORARILY_UNAVAILABLE");
+	        	gpsStatus = "unavailable";
+	        	if(mainServiceClient != null)
+	        		mainServiceClient.setGpsStatus(gpsStatus);
+	        }
+	    }
+
+	    public void onGpsStatusChanged(int event)
+	    {
+
+	        switch (event)
+	        {
+	            case GpsStatus.GPS_EVENT_FIRST_FIX:
+	            	gpsStatus = "fix";
+		        	if(mainServiceClient != null)
+		        		mainServiceClient.setGpsStatus(gpsStatus);
+	                break;
+
+	            case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
+	                GpsStatus status = gpsLocationManager.getGpsStatus(null);
+
+	                int maxSatellites = status.getMaxSatellites();
+
+	                Iterator<GpsSatellite> it = status.getSatellites().iterator();
+	                int count = 0;
+
+	                while (it.hasNext() && count <= maxSatellites)
+	                {
+	                    it.next();
+	                    count++;
+	                }
+
+	                gpsStatus = count + " sats";
+		        	if(mainServiceClient != null)
+		        		mainServiceClient.setGpsStatus(gpsStatus);
+		        	
+	                break;
+
+	            case GpsStatus.GPS_EVENT_STARTED:
+	            	 gpsStatus = "searching...";
+			        	if(mainServiceClient != null)
+			        		mainServiceClient.setGpsStatus(gpsStatus);
+	                break;
+
+	            case GpsStatus.GPS_EVENT_STOPPED:
+	            	gpsStatus = "stopped";
+			        if(mainServiceClient != null)
+			        		mainServiceClient.setGpsStatus(gpsStatus);
+	                break;
+
+	        }
+	    }
+
+	}
+	
+	
+	public class ProbeWebsocket {
+		
+		private final WebSocketConnection websocketConnection = new WebSocketConnection();
+		
+		private byte[] pendingData = null;
+		
+		public void start() {
+			if(!websocketConnection.isConnected())
+				startWebsocketConnection();
+		}
+		
+		public void stop() {
+			if(websocketConnection.isConnected())
+				websocketConnection.disconnect();
+		}
+		
+		public void sendBinaryMessage(byte[] data) {
+			
+			if(!websocketConnection.isConnected()) {
+				pendingData = data;
+				
+				startWebsocketConnection();
+				
+				return;
+			}
+			pendingData = null;
+			websocketConnection.sendBinaryMessage(data);
+
+		}
+		
+		private void startWebsocketConnection() {
+		   	 
+		 	   final String wsuri = WS_LOCATION_URL;
+		 	 
+		 	   try {
+
+		 		  websocketConnection.connect(wsuri, new WebSocketHandler() {
+		 	 
+		 	         @Override
+		 	         public void onOpen() {
+		 	        	 Log.d("startWebsocketConnection", "Status: Connected to " + wsuri);
+		 	        	 
+		 	        	 networkStatus = "connected";
+		 	        	 if(mainServiceClient != null)
+		 	        		 LocationService.mainServiceClient.setNetworkStatus(networkStatus);
+		 	        	 
+		 	        	 String version = "";
+		 	        	 
+		 	        	 if(packageManager != null)
+		 	        	 {
+		 	        		 PackageInfo info;
+		 	        		 try {
+		 	        			 info = packageManager.getPackageInfo(packageName, 0);
+		 	        			 version = info.versionName;
+		 	        		 } 
+		 	        		 catch (NameNotFoundException e) {
+		 	        			 //TODO Auto-generated catch block
+		 	        			 e.printStackTrace();	
+		 	        		}
+		 	        		 
+		 	        	 }
+		 	        	 
+		 	        	 websocketConnection.sendTextMessage("CONNECTION " + version + " " + imei + " (" + phoneId +")" );
+		 	        	 
+		 	        	 if(pendingData != null) {
+		 	        		websocketConnection.sendBinaryMessage(pendingData);
+		 	        		pendingData = null;
+		 	        	 }
+		 	         }
+		 	 
+		 	         @Override
+		 	         public void onTextMessage(String payload) {
+		 	           Log.d("startWebsocketConnection", "Got echo: " + payload);
+		 	          
+		 	           networkStatus = "connected";
+		 	           if(mainServiceClient != null)
+		 	        	   LocationService.mainServiceClient.setNetworkStatus(networkStatus);
+		 	         }
+		 	 
+		 	         @Override
+		 	         public void onClose(int code, String reason) {
+		 	        	 
+		 	            Log.d("startWebsocketConnection", "Connection lost.");
+		 	            
+		 	            // websockets disabled, kill off reconnect
+		 	            if(!useWebsockets) {
+		 	            	networkStatus = "switching to http";
+		 	            	if(mainServiceClient != null)
+			 	            	LocationService.mainServiceClient.setNetworkStatus(networkStatus);
+		 	            	return;
+		 	            }
+		 	            
+		 	            networkStatus = "re-connecting...";
+		 	            if(mainServiceClient != null)
+		 	            	LocationService.mainServiceClient.setNetworkStatus(networkStatus);
+		 	          
+		 	         }
+		 	      });
+		 	   } catch (WebSocketException e) {
+		 	 
+		 	      Log.d("startWebsocketConnection", e.toString());
+		 	      
+		 	     if(mainServiceClient != null)
+		 	    	 LocationService.mainServiceClient.setNetworkStatus("error");
+		 	   }
+		 	}
+
+	}
+
 }

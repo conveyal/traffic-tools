@@ -18,4 +18,10 @@ message LocationUpdate {
   required int64 phone = 2;
   repeated Location location = 3;
   
+  optional float battery = 4;
+  optional int32 network = 5;
+  optional bool charging = 6;
+  optional float level = 7;
+  optional string gps = 8 ;
+  
 }

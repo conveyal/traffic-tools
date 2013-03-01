@@ -20,6 +20,8 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.Menu;
@@ -57,12 +59,13 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
 		
 		super.onCreate(savedInstanceState);
 		
+		
 		TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
 		LocationService.imei = telephonyManager.getDeviceId();
 		
 		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 		
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         
 		setContentView(R.layout.activity_main);
 		
@@ -83,15 +86,15 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
 						startActivity(settingsIntent);
 						break;
 						
-					case R.id.mailButton:
-						
-						if(!LocationService.isLoggedIn())
-							return;
-						
-						Intent mailIntent = new Intent(ProbeMainActivity.this,
-						ProbePreferences.class);
-						startActivity(mailIntent);
-						break;
+//					case R.id.mailButton:
+//						
+//						if(!LocationService.isLoggedIn())
+//							return;
+//						
+//						Intent mailIntent = new Intent(ProbeMainActivity.this,
+//						ProbePreferences.class);
+//						startActivity(mailIntent);
+//						break;
 					
 					case R.id.mapButton:
 						
@@ -121,8 +124,8 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
 		   ImageButton settingsButton = (ImageButton) findViewById(R.id.settingsButton);
 		   settingsButton.setOnClickListener(listener);
 		   
-		   ImageButton mailButton = (ImageButton) findViewById(R.id.mailButton);
-		   mailButton.setOnClickListener(listener);
+		   //ImageButton mailButton = (ImageButton) findViewById(R.id.mailButton);
+		   //mailButton.setOnClickListener(listener);
 		   
 		   ImageButton mapButton = (ImageButton) findViewById(R.id.mapButton);
 		   mapButton.setOnClickListener(listener);
@@ -130,6 +133,7 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
 		   ImageButton changeLoginButton = (ImageButton) findViewById(R.id.changeLoginButton);
 		   changeLoginButton.setOnClickListener(listener);
 		   
+		  
 		   prefs.registerOnSharedPreferenceChangeListener(this);
 	}
 	
@@ -150,6 +154,20 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
         setOperator(LocationService.getOperator());
         setNetworkStatus(LocationService.getNetworkStatus());
         setGpsStatus(LocationService.getGpsStatus());
+        
+        try{
+			
+			PackageManager manager = this.getPackageManager();
+			PackageInfo info = manager.getPackageInfo(this.getPackageName(), 0);
+			
+			TextView textView = (TextView) findViewById(R.id.versionText);
+			textView.setText(info.versionName);
+		
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+	   
 
 	}
 	

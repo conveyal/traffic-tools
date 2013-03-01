@@ -23,11 +23,11 @@
         android:layout_height="wrap_content"
         android:layout_alignBottom="@+id/imageView1"
         android:layout_toLeftOf="@+id/imageView1"
-        android:text="trafficProbe"
+        android:text="TrafficProbe"
         android:textColor="#aaa"
         android:textSize="30sp" />
 
-    <ImageButton
+   <!--  <ImageButton
         android:id="@+id/mailButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -35,7 +35,7 @@
         android:layout_centerHorizontal="true"
         android:background="@null"
         android:paddingBottom="15dp"
-        android:src="@drawable/mail" />
+        android:src="@drawable/mail" />  -->
 
     <ImageButton
         android:id="@+id/settingsButton"
@@ -137,6 +137,14 @@
         android:layout_marginTop="10dp"
         android:layout_toRightOf="@+id/changeLoginButton"
         android:text="unregistered"
+        android:textColor="#fff" />
+
+    <TextView
+        android:id="@+id/versionText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/gps"
+        android:layout_alignLeft="@+id/gps"
         android:textColor="#fff" />
 
 </RelativeLayout>
