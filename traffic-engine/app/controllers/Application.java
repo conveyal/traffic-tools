@@ -1,0 +1,141 @@
+package controllers;
+
+import play.*;
+import play.mvc.*;
+import util.GeoUtils;
+import util.ProjectedCoordinate;
+
+
+import java.util.*;
+
+import models.*;
+
+import org.opentripplanner.routing.impl.GraphServiceImpl;
+import org.opentripplanner.routing.graph.Graph;
+import org.opentripplanner.routing.graph.Graph.LoadLevel;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
+
+import com.conveyal.traffic.graph.MovementEdge;
+import com.conveyal.traffic.graph.TrafficGraph;
+import com.conveyal.traffic.graph.VehicleObservation;
+import com.conveyal.traffic.graph.VehicleState;
+import com.vividsolutions.jts.geom.Coordinate;
+
+
+public class Application extends Controller {
+	
+	public static TrafficGraph graph = new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath"));
+
+		 public static void loadCebu() {
+		    
+			 for(int i = 0; i <  6000000; i += 250000){
+			
+				 for(Object o : LocationUpdate.em().createNativeQuery("select imei, timestamp, lat, lon from locationupdate order by timestamp limit 250000 offset " + i).getResultList()){
+					 String imei = (String)((Object[])o)[0];
+					 Date time = (Date)((Object[])o)[1];
+					 Double lat = (Double)((Object[])o)[2];
+					 Double lon = (Double)((Object[])o)[3];
+					
+					 VehicleObservation vo = new VehicleObservation(time.getTime(), GeoUtils.convertLatLonToEuclidean(new Coordinate(lat, lon)));
+					 Long vehicleId = graph.getVehicleId(imei);
+					 graph.updateVehicle(vehicleId, vo);
+				 }
+			 }
+	        ok();
+	    }
+
+	 public static void saveCebuStats() {
+		    
+		for(Integer edge : graph.getEdgesWithStats()) {
+			StatsEdge.nativeInsert(edge, graph.getEdgeSpeed(edge), graph.getTrafficEdge(edge).getGeometry());
+		}
+    	
+        ok();
+    }
+	
+    public static void simulate() {
+    	
+    	Coordinate coord1 = graph.getRandomPoint();
+    	Coordinate coord2 = graph.getRandomPoint();
+   
+    	List<Integer> edges = graph.getEdgesBetweenPoints(coord1, coord2);
+    	
+    	VehicleState vs = new VehicleState((long)1, graph);
+    	vs.simulateUpdatePosition(edges, 15.0);
+    	
+        ok();
+    }
+
+    
+    public static void edges()
+	{
+		/*Multimap<Geometry, Edge> edgeMap = graph.getGeomEdgeMap();
+
+		for(Edge edge : edgeMap.values())
+		{
+			Integer edgeId = graph.getInferredEdge(edge).getEdgeId();
+
+			MathTransform transform;
+
+		    try {
+		    	transform = GeoUtils.getTransform(new Coordinate(38.90911, -77.00932)).inverse();
+
+		    	if (graph.getEdge(edgeId).getGeometry() != null)
+		    	{
+			        Coordinate[] oldCoords = graph.getEdge(edgeId).getGeometry().getCoordinates();
+			        int nCoords = oldCoords.length;
+			        Coordinate[] newCoords = new Coordinate[nCoords];
+
+			        for (int i = 0; i < nCoords - 1; ++i) {
+			            Coordinate coord0 = oldCoords[i];
+			            Coordinate coord1 = oldCoords[i+1];
+
+			            double dx = coord1.x - coord0.x;
+			            double dy = coord1.y - coord0.y;
+
+			            double length = Math.sqrt(dx * dx + dy * dy);
+
+			            Coordinate c0 = new Coordinate(coord0.x - OFFSET * dy / length, coord0.y - OFFSET * dx / length);
+			            Coordinate c1 = new Coordinate(coord1.x - OFFSET * dy / length, coord1.y - OFFSET * dx / length);
+			            newCoords[i] = c0;
+			            newCoords[i+1] = c1; //will get overwritten except at last iteration
+			        }
+
+				    final Geometry transformed = JTS.transform( gf.createLineString(newCoords), transform);
+				    transformed.setSRID(4326);
+
+
+				    List<String> points = new ArrayList<String>();
+
+		        	for(Coordinate coord : transformed.getCoordinates())
+		        	{
+		        		points.add(new Double(coord.x).toString() + " " + new Double(coord.y).toString());
+
+		        	}
+
+		        	String linestring = "LINESTRING(" + StringUtils.join(points, ", ") + ")";
+
+				    Query idQuery = StreetEdge.em().createNativeQuery("SELECT NEXTVAL('hibernate_sequence');");
+			    	BigInteger nextId = (BigInteger)idQuery.getSingleResult();
+
+			    	StreetEdge.em().createNativeQuery("INSERT INTO streetedge (id, edgeid, shape)" +
+			        	"  VALUES(?, ?, ST_GeomFromText( ?, 4326));")
+			          .setParameter(1,  nextId)
+			          .setParameter(2,  edgeId)	            
+			          .setParameter(3,  linestring)
+			          .executeUpdate();
+
+		    	}
+		    }
+		    catch(Exception e)
+		    {
+		    	Logger.error("Can't transform geom.");
+		    }
+
+		}*/
+	}
+
+
+}

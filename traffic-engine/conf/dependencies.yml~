@@ -1,0 +1,35 @@
+# Application dependencies
+
+require:
+    - play
+    - org.opentripplanner -> opentripplanner 0.9.1
+    - com.vividsolutions -> jts 1.12
+    - org.springframework -> spring-aop 3.0.5.RELEASE
+    - org.springframework -> spring-beans 3.0.5.RELEASE
+    - org.springframework -> spring-context 3.0.5.RELEASE
+    - org.springframework -> spring-web 3.0.5.RELEASE
+    - org.springframework -> spring-security-core 3.0.5.RELEASE
+    - org.springframework -> spring-security-config 3.0.5.RELEASE
+    - org.springframework -> spring-security-web 3.0.5.RELEASE
+    - com.google.collections -> google-collections 1.0
+    - org.geotools -> gt-main 8.0-M4
+    - org.geotools -> gt-geojson 8.0-M4
+    - org.codehaus.jackson -> jackson-core-asl 1.9.5
+    - org.codehaus.jackson -> jackson-mapper-asl 1.9.5
+    - gov.sandia.foundry -> gov-sandia-cognition-common-core 3.3.2
+    - gov.sandia.foundry -> gov-sandia-cognition-learning-core 3.3.2
+
+
+
+repositories:
+    - otp: 
+        type:  iBiblio
+        root:  "http://repo.opengeo.org/org/opentripplanner/"
+        contains: 
+            - org.opentripplanner -> *
+
+    - osgeo:
+        type: iBiblio
+        root: "http://download.osgeo.org/webdav/geotools/"
+        contains:
+            - org.geotools -> *

@@ -1,0 +1,436 @@
+package com.conveyal.traffic.graph;
+
+import com.conveyal.traffic.graph.TrafficEdge;
+import com.conveyal.traffic.graph.TripLine;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import models.GraphEdge;
+import models.PathPoint;
+
+import org.opentripplanner.routing.algorithm.GenericAStar;
+import org.opentripplanner.routing.core.RoutingRequest;
+import org.opentripplanner.routing.core.TraverseMode;
+import org.opentripplanner.routing.core.TraverseModeSet;
+import org.opentripplanner.routing.edgetype.StreetEdge;
+import org.opentripplanner.routing.graph.Edge;
+import org.opentripplanner.routing.graph.Graph;
+import org.opentripplanner.routing.graph.Graph.LoadLevel;
+import org.opentripplanner.routing.edgetype.PlainStreetEdge;
+import org.opentripplanner.routing.edgetype.StreetTraversalPermission;
+import org.opentripplanner.routing.graph.Vertex;
+import org.opentripplanner.routing.impl.GraphServiceImpl;
+import org.opentripplanner.routing.impl.StreetVertexIndexServiceImpl;
+import org.opentripplanner.routing.impl.StreetVertexIndexServiceImpl.CandidateEdgeBundle;
+import org.opentripplanner.routing.spt.GraphPath;
+import org.opentripplanner.routing.spt.ShortestPathTree;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Envelope;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.LineString;
+import com.vividsolutions.jts.index.strtree.STRtree;
+
+import gov.sandia.cognition.math.matrix.Vector;
+import gov.sandia.cognition.math.matrix.VectorFactory;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
+
+import play.Logger;
+import play.Play;
+import util.GeoUtils;
+import util.ProjectedCoordinate;
+
+public class TrafficGraph {
+
+	private final static RoutingRequest defaultOptions = new RoutingRequest(new TraverseModeSet(TraverseMode.CAR));
+	
+	public static double TRIPLINE_LENGTH = 20;
+	public static double TRIPLINE_OFFSET = 5; 
+	
+	public Long nextVehicleId = 100l; 
+	public Long vehicleUpdateCount = 0l;
+	public Date vehicleUpdateTimer;
+	
+	private Graph graph;
+	private StreetVertexIndexServiceImpl indexService;
+	
+	private TrafficEdgeIndex teIndex = null;
+	
+	private HashMap<Integer, TrafficEdge> trafficEdgeMap = null;
+
+	private ConcurrentHashMap<Integer, TrafficEdgeStats> trafficStats = new ConcurrentHashMap<Integer, TrafficEdgeStats>(8, 0.9f, 1);
+	
+	private ConcurrentHashMap<Long, VehicleState> vehicles = new ConcurrentHashMap<Long, VehicleState>(8, 0.9f, 1);
+	private ConcurrentHashMap<String, Long> vehicleIds = new ConcurrentHashMap<String, Long>(8, 0.9f, 1);
+	
+	public RoutingRequest getOptions() {
+		return defaultOptions;
+	}
+	
+	public TrafficGraph(String path)
+	{
+		try {
+			Logger.info("Loading graph: " + path);
+			
+			File otpGraphFile = new File(path, "Graph.obj");
+			
+			graph = Graph.load(otpGraphFile, LoadLevel.DEBUG);
+			indexService = new StreetVertexIndexServiceImpl(graph);
+			
+			
+			File trafficGraphFile = new File(path, "Traffic.obj");
+			
+			if(trafficGraphFile.exists()) {
+				Logger.info("Loading TrafficGraph: " + path);
+
+				
+				try {
+					InputStream file = new FileInputStream(trafficGraphFile);
+					InputStream buffer = new BufferedInputStream( file );
+					ObjectInput input = new ObjectInputStream ( buffer );
+					try {
+						trafficEdgeMap = (HashMap<Integer, TrafficEdge>)input.readObject();
+						Logger.info(trafficEdgeMap.size() + " TrafficEdges...");
+					}
+					finally {
+						input.close();
+					}
+				}
+				catch(Exception e) {
+					Logger.info("Failed to load TrafficGraph: " + e.toString());
+					e.printStackTrace();
+					trafficEdgeMap = null;
+				}
+				
+			}
+			
+			if(trafficEdgeMap == null) {
+				
+				// rebuild misisng map
+				
+				trafficEdgeMap = new HashMap<Integer, TrafficEdge>();
+				
+				Logger.info("Building TrafficEdges...");
+				
+				for (final Vertex v : graph.getVertices()) {
+
+					for (final Edge e : v.getOutgoing()) {
+						
+						// only graph PSEs that can be traversed by cars
+						if(e instanceof PlainStreetEdge && !((PlainStreetEdge)e).canTraverse(defaultOptions))
+							continue;
+						
+						TrafficEdge te = new TrafficEdge((PlainStreetEdge)e, graph, defaultOptions);
+						
+						final Geometry geometry = te.getGeometry();
+						if (geometry != null) {
+							if (trafficEdgeMap != null) {
+								trafficEdgeMap.put(te.getId(), te);
+					           
+							}
+		          
+							//if (graph.getIdForEdge(e) != null) {
+							//	final Envelope envelope = geometry.getEnvelopeInternal();
+							//	edgeIndex.insert(envelope, e);
+							//}
+						}
+					}
+				}
+				
+				Logger.info("Created " + trafficEdgeMap.size() + " TrafficEdges.");
+				
+				buildTripLines();
+				
+				saveTripLines();
+				
+				try{
+					 
+					Logger.info("Writing TrafficGraph");
+					 
+				    OutputStream file = new FileOutputStream(trafficGraphFile);
+				    OutputStream buffer = new BufferedOutputStream( file );
+				    ObjectOutput output = new ObjectOutputStream( buffer );
+				    try{
+				    	output.writeObject(trafficEdgeMap);
+				    }
+				    finally{
+				    	output.close();
+				    }
+				}  
+				catch(IOException e){
+					Logger.info("Failed to write TrafficGraph: " + e.toString());
+					e.printStackTrace();
+				}
+				
+			}
+			
+			indexTrafficEdges();
+			
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public TrafficEdgeIndex getTraffEdgeIndex() {
+		return teIndex;
+	}
+	
+	public TrafficEdge getTrafficEdge(Integer id) {
+		return trafficEdgeMap.get(id);
+	}
+	
+	
+	public void updateEdgeSpeed(Integer id, Double speed) {
+		if(!trafficStats.containsKey(id))
+			trafficStats.put(id, new TrafficEdgeStats(id));
+		
+		Logger.info("Speed: " + speed);
+		trafficStats.get(id).update(speed);
+	}
+	
+	public Double getEdgeSpeed(Integer id) {
+		if(!trafficStats.containsKey(id))
+			return null;
+		
+		return trafficStats.get(id).average();
+	}
+	
+	public Set<Integer> getEdgesWithStats() {
+		return trafficStats.keySet();
+	}
+
+	
+	
+	
+	public Long getVehicleId(String imei) {
+		if(!vehicleIds.containsKey(imei))
+			vehicleIds.put(imei, nextVehicleId++);
+		
+		return vehicleIds.get(imei);
+	}
+	
+	public void updateVehicle(Long vehicleId, VehicleObservation observation) {
+		
+		if(vehicleUpdateTimer == null) {
+			vehicleUpdateTimer = new Date();
+		}
+		
+		if(!vehicles.containsKey(vehicleId))
+			vehicles.put(vehicleId, new VehicleState(vehicleId, this));
+		
+		try {
+			vehicles.get(vehicleId).updatePosition(observation);
+		} 
+		catch (ObservationOutOfOrderException e) {
+			// update out of order, skipping...
+			Logger.warn("Vehicle update out of order.");
+		}
+		
+		if(vehicleUpdateCount % 1000 == 0){
+			vehicleUpdateCount = 0l;
+			
+			Date currentTime = new Date();
+			
+			//Logger.info("Updates/sec: " + (vehicleUpdateCount / ((currentTime.getTime() + 1000 - (vehicleUpdateTimer.getTime())) / 1000)));
+			
+			vehicleUpdateTimer = currentTime;
+		}
+		
+		vehicleUpdateCount++;
+	}
+	
+	public Coordinate getRandomPoint() {
+		
+		int pos = (int)(Math.floor((trafficEdgeMap.values().size() * (float)Math.random())));
+		TrafficEdge[] tes = trafficEdgeMap.values().toArray(new TrafficEdge[1]);
+		return tes[pos].getGeometry().getCoordinateN(0);
+	}
+	
+	public List<Integer> getEdgesBetweenPoints(Coordinate fromCoord, Coordinate toCoord) {
+		
+		final RoutingRequest options = TrafficGraph.defaultOptions;
+		
+		CandidateEdgeBundle fromEdges = indexService.getClosestEdges(fromCoord, options, null, null, false);
+		CandidateEdgeBundle toEdges = indexService.getClosestEdges(toCoord, options, null, null, false);
+    
+		GenericAStar astar = new GenericAStar();
+		final RoutingRequest req = new RoutingRequest(options.getModes());
+
+		final Vertex fromVertex = fromEdges.best.edge.getFromVertex();
+		final Vertex toVertex = toEdges.best.edge.getFromVertex();
+    
+		req.setRoutingContext(graph, fromVertex, toVertex);
+    
+		ShortestPathTree tree = astar.getShortestPathTree(req);
+		tree.getPaths().get(0);
+		GraphPath result = tree.getPaths().get(0);
+		
+		List<Integer> edgeIds = Lists.newArrayList();
+    
+		for (Edge edge : result.edges) {
+			Integer id = graph.getIdForEdge(edge);
+			if (id != null)
+				edgeIds.add(id);
+		}
+		
+		return edgeIds;
+	}
+	
+	public LineString getPathForEdges(List<Integer> edges, Double spacing, Double error) {
+		List<Coordinate> coordList = new ArrayList<Coordinate>();
+		
+		Double remainingDistance = 0.0;	
+		ProjectedCoordinate previousPc = null;
+		
+		for(Integer edgeId : edges) {
+			
+			for(Coordinate originalCoord : trafficEdgeMap.get(edgeId).getGeometry().getCoordinates()) {
+				
+				ProjectedCoordinate currentPc = GeoUtils.convertLonLatToEuclidean(originalCoord);
+				
+				if(previousPc != null) {
+					
+					double segmentDistance = previousPc.distance(currentPc);
+					double segmentPosition = 0.0;
+					
+					int numPoints = (int)Math.floor((segmentDistance + remainingDistance)  / spacing);
+				
+					ProjectedCoordinate point = null;
+					
+					for(int i = 1; i <= numPoints; i++) {
+						
+						segmentPosition = (i * spacing) - remainingDistance;
+						
+						point = GeoUtils.calcPointAlongLine(previousPc, currentPc, segmentPosition);
+					
+						double pointErrorDistance = error * (1 - Math.log10(Math.random() * 10));
+						double pointErrorAngle = GeoUtils.RADIANS * Math.random();
+						
+						point.x = point.x + pointErrorDistance * Math.cos(pointErrorAngle);
+						point.y = point.y + pointErrorDistance * Math.sin(pointErrorAngle);
+						
+						coordList.add(GeoUtils.convertToLonLat(point));
+						
+					}
+					
+					if(point != null)
+						remainingDistance = segmentDistance - segmentPosition;
+					else
+						remainingDistance = segmentDistance + remainingDistance;
+						
+				}
+				
+				previousPc = currentPc;
+				
+				
+				/*if(previousPc != null) {
+					
+					if(previousPc.distance(currentPc) + remainingDistance < spacing) {
+						remainingDistance += previousPc.distance(currentPc);
+					}
+					else {
+						
+						double pointDistance = (remainingDistance + previousPc.distance(currentPc));
+						
+						int numPoints = (int)Math.floor(pointDistance / spacing);
+						
+						ProjectedCoordinate point = null;
+						
+						double totalSegmentDistance = (numPoints * spacing) - remainingDistance;
+						
+						for(int i = 1; i <= numPoints; i++) {
+							
+							point = GeoUtils.calcPointAlongLine(previousPc, currentPc, (i * spacing) - remainingDistance);
+							coordList.add(GeoUtils.convertToLonLat(point));
+							remainingDistance = 0.0;
+						}
+						
+						if(point != null)
+							remainingDistance = previousPc.distance(currentPc) - totalSegmentDistance;
+						else
+							remainingDistance = previousPc.distance(currentPc) + remainingDistance;
+					}
+				}
+				previousPc = currentPc;*/
+			}
+		}
+		
+		Coordinate[] coords = coordList.toArray(new Coordinate[1]);
+		
+		return GeoUtils.geometryFactory.createLineString(coords);
+	}
+	
+	private void saveTripLines() {
+		
+		Logger.info("Saving trip lines...");
+
+		for(TrafficEdge te : trafficEdgeMap.values()) {
+			te.save();
+		}
+	}
+	
+	private void buildTripLines() {
+		
+		Logger.info("Building trip lines...");
+		
+		Integer validTripLineEdges = 0;
+		Integer invalidTripLineEdges = 0;
+		
+		for(TrafficEdge te : trafficEdgeMap.values()) {
+			try {
+				te.buildTripLines();
+				
+				validTripLineEdges++;
+			}
+			catch(TripLineException tle) {
+				// invalid edge for trip lines
+				
+				// need include skiped edges for traversal to link longer edges !!! 
+				
+				invalidTripLineEdges++;
+			}
+		}
+		
+		Logger.info(validTripLineEdges + " TrafficEdges with trip lines (" + invalidTripLineEdges + " invalid TEs)");
+	}
+	
+	private void indexTrafficEdges() {
+		
+		Logger.info("Indexing trip lines...");
+		
+		List<TrafficEdge> tes = new ArrayList<TrafficEdge>();
+		
+		for(TrafficEdge te : trafficEdgeMap.values()) {
+			tes.add(te);
+		}
+		
+		teIndex = new TrafficEdgeIndex(tes);
+		
+	}
+}
