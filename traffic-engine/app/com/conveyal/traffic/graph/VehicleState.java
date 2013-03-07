@@ -248,9 +248,9 @@ public class VehicleState {
 			"\t" + traversedVelocity + " m/s average traversed\n" +
 			"\t" + pairedVelocity + " m/s average paired"); 
 
-		PathEdge pe = new PathEdge();
-		pe.shape = path;
-		pe.save();	
+		//PathEdge pe = new PathEdge();
+		//pe.shape = path;
+		//pe.save();	
 		
 //		Logger.info("t1Crossings: " + t1Crossings.keySet().size());
 //		Logger.info("t2Crossings: " + t2Crossings.keySet().size());

@@ -23,11 +23,6 @@ import org.opentripplanner.routing.graph.Graph.LoadLevel;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.dispatch.Future;
-import akka.dispatch.OnSuccess;
-
 import com.conveyal.traffic.graph.MovementEdge;
 import com.conveyal.traffic.graph.TrafficGraph;
 import com.conveyal.traffic.graph.VehicleObservation;
@@ -37,20 +32,20 @@ import com.vividsolutions.jts.geom.Coordinate;
 
 
 public class Application extends Controller {
-		
+	
 	
 	public static TrafficGraph graph = TrafficGraph.load(Play.configuration.getProperty("application.otpGraphPath"));
 
-		public static void sendData(Long id, Long time, Double lat, Double lon) {
-			
-			ProjectedCoordinate pc = GeoUtils.convertLonLatToEuclidean(new Coordinate(lon,lat));
-			
-			VehicleObservation vo = new VehicleObservation(id, time, pc);
-			
-			graph.updateVehicle(id, vo);
-			
-			Logger.info("message for: " + id);
-		}
+	public static void sendData(Long id, Long time, Double lat, Double lon) {
+		
+		ProjectedCoordinate pc = GeoUtils.convertLonLatToEuclidean(new Coordinate(lon,lat));
+		
+		VehicleObservation vo = new VehicleObservation(id, time, pc);
+		
+		graph.updateVehicle(id, vo);
+		
+		Logger.info("message for: " +id );
+	}
 
 	
 		public static void loadCebu() {
