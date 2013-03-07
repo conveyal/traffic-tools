@@ -1,4 +1,98 @@
 #{extends 'main.html' /}
-#{set title:'Home' /}
 
-#{welcome /}
+#{set page:'index' /}
+
+<div class="row-fluid" style="background-color: #fff;  position: relative;">
+
+
+<div id="map"></div>
+
+<div style="position: absolute; top:10px; right:10px; width:150px;">
+		<div class="well well-small">
+		
+		<strong>Simulation</strong> <!-- <a href="#" style="float: right;">Generate Report</a>  -->
+
+			<button class="primary" id="runSimulation" onclick="runSimulation();">Simulation</button>
+			<button id="clearSimulation"  onclick="clearSimulation();">clear</button>
+			
+
+		</div>
+</div>
+</div>
+		
+<script src="@{'/public/javascripts/simulator/simulator.js'}"></script>
+
+
+ 
+
+<script type="text/javascript">
+
+    // Create a socket
+
+    var socket = new WebSocket('ws://localhost:9000/ws/map')
+
+ var simulatedPathStyle = {
+    "color": "#ff7800",
+    "weight": 2,
+    "opacity": 0.65
+};
+
+ var tripLinePathStyle = {
+    "color": "#00ff00",
+    "weight": 3,
+    "opacity": 0.65
+};
+
+ var streetEdgePathStyle = {
+    "color": "#ffff00",
+    "weight": 3,
+    "opacity": 0.65
+};
+
+function bindPopup(feature, layer) {
+	layer.bindPopup(feature.properties.description);
+}
+
+
+    // Message received on the socket
+
+    socket.onmessage = function(event) {
+
+        var data = JSON.parse(event.data);
+        var geoJson = JSON.parse(data.geom);
+        
+      	if(data.type == "VehicleObservation") {
+      	
+      		var gj = L.geoJson(geoJson, { style: function (feature) {return {color: "#00f"}; }, pointToLayer : function (featureData, latlng) {
+      			return L.circleMarker(latlng, {radius: 4});
+      		}});
+      		
+      		geoJsonOverlay.addLayer(gj);
+      	}
+      	
+      	if(data.type == "simulatePath") {
+      	
+      		var gj =L.geoJson(geoJson, {style: simulatedPathStyle});
+      		
+      		geoJsonOverlay.addLayer(gj);
+      	}
+      	
+      	if(data.type == "tripLine") {
+      	
+      		var gj =L.geoJson(geoJson, {style: tripLinePathStyle});
+      		
+      		geoJsonOverlay.addLayer(gj);
+      	}
+      	
+      	if(data.type == "streetEdge") {
+      	
+      		geoJson.properties = {description: data.message};
+      		var gj = L.geoJson(geoJson, {style: streetEdgePathStyle, onEachFeature: bindPopup});
+      		
+      		geoJsonOverlay.addLayer(gj);
+      	
+      	}
+    }
+
+</script>
+

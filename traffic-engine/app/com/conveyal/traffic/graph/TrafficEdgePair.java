@@ -9,6 +9,7 @@ public class TrafficEdgePair {
 	private final Double pairVelocity;
 	
 	public TrafficEdgePair(TrafficEdgeTraversal tet1, TrafficEdgeTraversal tet2) {
+
 		pairTravelTime = tet2.getTlc2().getTimeAtCrossing() - tet1.getTlc1().getTimeAtCrossing();
 		pairDistance = tet2.getParentEdge().getPairedLength() + tet1.getParentEdge().getPairedLength();
 		

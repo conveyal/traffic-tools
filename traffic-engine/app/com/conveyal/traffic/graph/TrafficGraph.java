@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -76,10 +77,13 @@ public class TrafficGraph {
 	public Long vehicleUpdateCount = 0l;
 	public Date vehicleUpdateTimer;
 	
+	private File trafficGraphFile;
+	
 	private Graph graph;
 	private StreetVertexIndexServiceImpl indexService;
 	
 	private TrafficEdgeIndex teIndex = null;
+	private PathStatisticsIndex psIndex = new PathStatisticsIndex();
 	
 	private HashMap<Integer, TrafficEdge> trafficEdgeMap = null;
 
@@ -92,30 +96,33 @@ public class TrafficGraph {
 		return defaultOptions;
 	}
 	
-	public TrafficGraph(String path)
-	{
+	public static TrafficGraph load(String path) {
+		
 		try {
+			TrafficGraph g = new TrafficGraph();
+			
 			Logger.info("Loading graph: " + path);
 			
 			File otpGraphFile = new File(path, "Graph.obj");
 			
-			graph = Graph.load(otpGraphFile, LoadLevel.DEBUG);
-			indexService = new StreetVertexIndexServiceImpl(graph);
+			g.graph = Graph.load(otpGraphFile, LoadLevel.DEBUG);
+			g.indexService = new StreetVertexIndexServiceImpl(g.graph);
 			
+			g.trafficGraphFile = new File(path, "Traffic.obj");
 			
-			File trafficGraphFile = new File(path, "Traffic.obj");
-			
-			if(trafficGraphFile.exists()) {
+			if(g.trafficGraphFile.exists()) {
 				Logger.info("Loading TrafficGraph: " + path);
 
 				
 				try {
-					InputStream file = new FileInputStream(trafficGraphFile);
+					InputStream file = new FileInputStream(g.trafficGraphFile);
 					InputStream buffer = new BufferedInputStream( file );
 					ObjectInput input = new ObjectInputStream ( buffer );
 					try {
-						trafficEdgeMap = (HashMap<Integer, TrafficEdge>)input.readObject();
-						Logger.info(trafficEdgeMap.size() + " TrafficEdges...");
+						g.trafficEdgeMap = (HashMap<Integer, TrafficEdge>)input.readObject();
+						g.psIndex = (PathStatisticsIndex)input.readObject();
+						Logger.info(g.trafficEdgeMap.size() + " TrafficEdges...");
+						
 					}
 					finally {
 						input.close();
@@ -124,77 +131,97 @@ public class TrafficGraph {
 				catch(Exception e) {
 					Logger.info("Failed to load TrafficGraph: " + e.toString());
 					e.printStackTrace();
-					trafficEdgeMap = null;
+					g.trafficEdgeMap = null;
 				}
 				
 			}
 			
-			if(trafficEdgeMap == null) {
+			if(g.trafficEdgeMap == null) {
 				
-				// rebuild misisng map
+				build(g);
 				
-				trafficEdgeMap = new HashMap<Integer, TrafficEdge>();
-				
-				Logger.info("Building TrafficEdges...");
-				
-				for (final Vertex v : graph.getVertices()) {
-
-					for (final Edge e : v.getOutgoing()) {
-						
-						// only graph PSEs that can be traversed by cars
-						if(e instanceof PlainStreetEdge && !((PlainStreetEdge)e).canTraverse(defaultOptions))
-							continue;
-						
-						TrafficEdge te = new TrafficEdge((PlainStreetEdge)e, graph, defaultOptions);
-						
-						final Geometry geometry = te.getGeometry();
-						if (geometry != null) {
-							if (trafficEdgeMap != null) {
-								trafficEdgeMap.put(te.getId(), te);
-					           
-							}
-		          
-							//if (graph.getIdForEdge(e) != null) {
-							//	final Envelope envelope = geometry.getEnvelopeInternal();
-							//	edgeIndex.insert(envelope, e);
-							//}
-						}
-					}
-				}
-				
-				Logger.info("Created " + trafficEdgeMap.size() + " TrafficEdges.");
-				
-				buildTripLines();
-				
-				saveTripLines();
-				
-				try{
-					 
-					Logger.info("Writing TrafficGraph");
-					 
-				    OutputStream file = new FileOutputStream(trafficGraphFile);
-				    OutputStream buffer = new BufferedOutputStream( file );
-				    ObjectOutput output = new ObjectOutputStream( buffer );
-				    try{
-				    	output.writeObject(trafficEdgeMap);
-				    }
-				    finally{
-				    	output.close();
-				    }
-				}  
-				catch(IOException e){
-					Logger.info("Failed to write TrafficGraph: " + e.toString());
-					e.printStackTrace();
-				}
-				
+				save(g);
 			}
 			
-			indexTrafficEdges();
+			g.indexTrafficEdges();
+			
+			return g;
 			
 		}
 		catch(Exception e) {
 			e.printStackTrace();
+			 
+			return null;
 		}
+	}
+	
+	public static void build(TrafficGraph g) {
+	
+		// rebuild misisng map
+		
+		g.trafficEdgeMap = new HashMap<Integer, TrafficEdge>();
+		
+		Logger.info("Building TrafficEdges...");
+		
+		for (final Vertex v : g.graph.getVertices()) {
+
+			for (final Edge e : v.getOutgoing()) {
+				
+				// only graph PSEs that can be traversed by cars
+				if(e instanceof PlainStreetEdge && !((PlainStreetEdge)e).canTraverse(defaultOptions))
+					continue;
+				
+				TrafficEdge te = new TrafficEdge((PlainStreetEdge)e, g.graph, defaultOptions);
+				
+				final Geometry geometry = te.getGeometry();
+				if (geometry != null) {
+					if (g.trafficEdgeMap != null) {
+						g.trafficEdgeMap.put(te.getId(), te);
+			           
+					}
+          
+					//if (graph.getIdForEdge(e) != null) {
+					//	final Envelope envelope = geometry.getEnvelopeInternal();
+					//	edgeIndex.insert(envelope, e);
+					//}
+				}
+			}
+		}
+		
+		Logger.info("Created " + g.trafficEdgeMap.size() + " TrafficEdges.");
+		
+		g.buildTripLines();
+	
+	}
+	
+	public static void save(TrafficGraph g) {
+		
+		//g.saveTripLines();
+		
+		try{
+			 
+			Logger.info("Writing TrafficGraph");
+			 
+		    OutputStream file = new FileOutputStream(g.trafficGraphFile);
+		    OutputStream buffer = new BufferedOutputStream( file );
+		    ObjectOutput output = new ObjectOutputStream( buffer );
+		    try{
+		    	output.writeObject(g.trafficEdgeMap);
+		    	output.writeObject(g.psIndex);
+		    }
+		    finally{
+		    	output.close();
+		    }
+		}  
+		catch(IOException e){
+			Logger.info("Failed to write TrafficGraph: " + e.toString());
+			e.printStackTrace();
+		}
+	}
+	
+	public TrafficGraph()
+	{
+
 	}
 	
 	public TrafficEdgeIndex getTraffEdgeIndex() {
@@ -205,6 +232,11 @@ public class TrafficGraph {
 		return trafficEdgeMap.get(id);
 	}
 	
+	public void updatePaths(LinkedList<TrafficEdgeTraversal> path) {
+		
+		psIndex.update(path);
+		
+	}
 	
 	public void updateEdgeSpeed(Integer id, Double speed) {
 		if(!trafficStats.containsKey(id))
@@ -378,6 +410,22 @@ public class TrafficGraph {
 					}
 				}
 				previousPc = currentPc;*/
+			}
+		}
+		
+		Coordinate[] coords = coordList.toArray(new Coordinate[1]);
+		
+		return GeoUtils.geometryFactory.createLineString(coords);
+	}
+	
+	
+	public LineString getPathForEdges(List<Integer> edges) {
+		List<Coordinate> coordList = new ArrayList<Coordinate>();
+
+		for(Integer edgeId : edges) {
+			
+			for(Coordinate originalCoord : trafficEdgeMap.get(edgeId).getGeometry().getCoordinates()) {
+				coordList.add(originalCoord);
 			}
 		}
 		

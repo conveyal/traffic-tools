@@ -1,6 +1,13 @@
 package com.conveyal.traffic.graph;
 
+import java.io.IOException;
+
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.ObjectMapper;
+
+import models.MapEvent;
 import play.Logger;
+import util.MapEventData;
 
 public class TrafficEdgeTraversal {
 	
@@ -24,6 +31,13 @@ public class TrafficEdgeTraversal {
 			velocity = tl1.getTripLine().getParentEdge().getTlLength() / (travelTime / 1000);
 			
 			//Logger.info("Edge traversal: " + parentEdge.getId() + "(velocity: " + velocity + ")");
+			
+			try {
+				MapEvent.instance.event.publish(this.mapEvent());
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+			}
 		}
 		else
 			throw new InvalidTraverseException();
@@ -53,5 +67,20 @@ public class TrafficEdgeTraversal {
 		
 		return new TrafficEdgePair(this, tet2);
 		
+	}
+	
+public String mapEvent() throws JsonGenerationException, IOException {
+	
+		
+		MapEventData med = new MapEventData();
+		
+		med.message = "Velocity: " + velocity;
+		med.type = "streetEdge";
+		med.geom = parentEdge.getGeometry();
+
+		ObjectMapper mapper = new ObjectMapper();
+	
+		return mapper.writeValueAsString(med);
+	
 	}
 }

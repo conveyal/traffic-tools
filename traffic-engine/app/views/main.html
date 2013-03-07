@@ -1,16 +1,98 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
 
-<html>
-    <head>
-        <title>#{get 'title' /}</title>
-        <meta charset="${_response_encoding}">
-        <link rel="stylesheet" media="screen" href="@{'/public/stylesheets/main.css'}">
-        #{get 'moreStyles' /}
-        <link rel="shortcut icon" type="image/png" href="@{'/public/images/favicon.png'}">
-        <script src="@{'/public/javascripts/jquery-1.6.4.min.js'}" type="text/javascript" charset="${_response_encoding}"></script>
-        #{get 'moreScripts' /}
-    </head>
-    <body>
-        #{doLayout /}
-    </body>
+	<link rel="stylesheet" href="@{'/public/javascripts/leaflet.css'}" />
+	<link rel="stylesheet" href="@{'/public/javascripts/lib/leaflet.label/leaflet.label.css'}" />
+	<link rel="stylesheet" href="@{'/public/bootstrap/boostrap.select2/select2.css'}" />
+
+	<link href="@{'/public/ui-lightness/jquery-ui-1.8.23.custom.css'}" rel="stylesheet">
+    <link href="@{'/public/bootstrap/css/bootstrap.css'}" rel="stylesheet">
+    <link href="@{'/public/bootstrap/css/bootstrap-datepicker.css'}" rel="stylesheet">
+    <link href="@{'/public/bootstrap/css/bootstrap-timepicker.css'}" rel="stylesheet">
+    
+    
+   <style type="text/css">
+      body {
+        padding: 0px;
+        background-color: #fff;	
+      }
+      
+      #content 
+      {
+      	padding: 0px;
+      	margin-top: 40px;
+      }
+      
+      #map
+      {
+      	width: 100%;
+      }
+    
+    </style>
+
+    <link href="@{'/public/bootstrap/css/bootstrap-responsive.min.css'}" rel="stylesheet">
+    
+    <title>Cebu Traffic</title>
+
+	<script>
+	
+		var geoJsonOverlay;
+		var defaultLatLon = [38.8900, -77.0300];
+	
+	</script>
+
+</head>
+
+<body>
+
+	<div class="navbar navbar-inverse navbar-fixed-top" id="header">
+      <div class="navbar-inner">
+      	<a class="brand" href="#">&nbsp;TrafficEngine</a>
+        <div class="nav-collapse collapse">
+        
+        </div>
+            
+          <div class="nav-collapse">
+         
+            <ul class="nav">
+            	
+            	<li #{if page == 'index'}class="active"#{/if}><a href="@{Application.index}">Real-time</a></li>
+            	
+            	<li #{if page == 'simulator'}class="active"#{/if}><a href="@{Application.simulator}">Simulator</a></li>
+            	
+            	<li #{if page == 'paths'}class="active"#{/if}><a href="@{Application.paths}">Paths</a></li>
+	              
+            </ul>
+          </div>
+          
+          
+        </div>
+      </div>
+    </div>
+   
+#{script "jquery.js"/}
+#{script "leaflet-src.js"/}
+#{script "handlebars.js"/}
+#{script "json2.js"/}
+#{script "underscore-min.js"/}
+<script src="@{'/public/bootstrap/js/bootstrap.min.js'}"></script>
+<script src="@{'/public/bootstrap/js/bootstrap-datepicker.js'}"></script>
+<script src="@{'/public/bootstrap/js/bootstrap-timepicker.js'}"></script>
+<script src="@{'/public/bootstrap/boostrap.select2/select2.min.js'}"></script>
+#{script "backbone.js"/}
+
+#{script "lib/leaflet.label/leaflet.label-src.js"/}
+#{script "lib/moment.js"/}
+
+
+    <div class="container-fluid" id="content">
+    
+    	#{doLayout /}
+    
+    </div>
+
+
+</body>
+    
 </html>

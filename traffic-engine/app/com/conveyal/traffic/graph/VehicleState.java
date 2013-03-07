@@ -4,11 +4,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import models.MapEvent;
 import models.PathEdge;
 
 import play.Logger;
@@ -43,6 +45,7 @@ public class VehicleState {
 	private HashMap<Integer, TrafficEdgeTraversal> t2Crossings = new HashMap<Integer, TrafficEdgeTraversal>();
 	
 	private HashMap<Integer, TrafficEdgeTraversal> upstreamCrossings = new HashMap<Integer, TrafficEdgeTraversal>();
+	private LinkedList<TrafficEdgeTraversal> crossingList = new LinkedList<TrafficEdgeTraversal>();
 	
 	// map of last tl1 crossings times for each edge
 	private TreeMap<Long, Set<Integer>> t1CrossingTimes = new TreeMap<Long, Set<Integer>>();
@@ -58,6 +61,13 @@ public class VehicleState {
 		
 		// must be synchronized to prevent concurrent update operations on the same vehicle state
 		synchronized(this) { 
+			
+			try {
+				MapEvent.instance.event.publish(currentObservation.mapEvent());
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+			}
 			
 			if(lastObservation != null) {
 				
@@ -75,6 +85,8 @@ public class VehicleState {
 					t1Crossings.put(t1crossing.getEdgeId(), t1crossing);
 					
 					addEdgeId(t1CrossingTimes, t1crossing.getTimeAtCrossing(), t1crossing.getEdgeId());
+					
+					
 					//t1CrossingTimes.put(t1crossing.getTimeAtCrossing(), t1crossing.getEdgeId());
 					
 					//Logger.info("TL1 crossing for: " + t1crossing.getEdgeId());
@@ -161,7 +173,7 @@ public class VehicleState {
 		upstreamCrossingTimes.clear();
 		
     	LineString path = graph.getPathForEdges(edges, SIMULATION_GPS_SPACING, SIMULATION_GPS_ERROR);
-    	
+    	LineString path2 = graph.getPathForEdges(edges);
 		for(Coordinate c : path.getCoordinates()) {
 			ProjectedCoordinate currentCoord = GeoUtils.convertLonLatToEuclidean(c);
 			VehicleObservation currentObservation = null;
@@ -170,13 +182,19 @@ public class VehicleState {
 				double distance = lastObservation.getPosition().distance(currentCoord);
 				long time = (long)((distance / velocity) * 1000) + lastObservation.getTime();
 				
-				currentObservation = new VehicleObservation(time, currentCoord);
+				currentObservation = new VehicleObservation(vehicleId, time, currentCoord);
 			}
 			else
-				currentObservation = new VehicleObservation(new Long(0), currentCoord);
-			
+				currentObservation = new VehicleObservation(vehicleId, new Long(0), currentCoord);
+				
 			try {
 				updatePosition(currentObservation);
+				try {
+					Thread.sleep(50);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			catch(ObservationOutOfOrderException e) {
 				// this should only happen if multiple updates are being performed on the same VehicleState at the same time
@@ -266,6 +284,25 @@ public class VehicleState {
 				
 				sPairedDist += pair.getTravelDistance();
 				sPairedTime += pair.getTravelTime();
+			}
+			
+			// update crossing list
+			int cls = crossingList.size();
+			
+			if(cls == 4) {
+			
+				crossingList.poll();
+				crossingList.poll();
+			} 
+			else if(cls == 3) {
+				crossingList.poll();
+			}
+			
+			crossingList.add(tet1);
+			crossingList.add(tet2);
+			
+			if(crossingList.size() == 4) {	
+				graph.updatePaths(crossingList);
 			}
 			
 			return true;

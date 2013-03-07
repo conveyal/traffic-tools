@@ -3,13 +3,19 @@ package controllers;
 import play.*;
 import play.mvc.*;
 import util.GeoUtils;
+import util.MapEventData;
 import util.ProjectedCoordinate;
 
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 import models.*;
 
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.opentripplanner.routing.impl.GraphServiceImpl;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Graph.LoadLevel;
@@ -17,18 +23,37 @@ import org.opentripplanner.routing.graph.Graph.LoadLevel;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.dispatch.Future;
+import akka.dispatch.OnSuccess;
+
 import com.conveyal.traffic.graph.MovementEdge;
 import com.conveyal.traffic.graph.TrafficGraph;
 import com.conveyal.traffic.graph.VehicleObservation;
 import com.conveyal.traffic.graph.VehicleState;
+import com.typesafe.config.ConfigFactory;
 import com.vividsolutions.jts.geom.Coordinate;
 
 
 public class Application extends Controller {
+		
 	
-	public static TrafficGraph graph = new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath"));
+	public static TrafficGraph graph = TrafficGraph.load(Play.configuration.getProperty("application.otpGraphPath"));
 
-		 public static void loadCebu() {
+		public static void sendData(Long id, Long time, Double lat, Double lon) {
+			
+			ProjectedCoordinate pc = GeoUtils.convertLonLatToEuclidean(new Coordinate(lon,lat));
+			
+			VehicleObservation vo = new VehicleObservation(id, time, pc);
+			
+			graph.updateVehicle(id, vo);
+			
+			Logger.info("message for: " + id);
+		}
+
+	
+		public static void loadCebu() {
 		    
 			 for(int i = 0; i <  6000000; i += 250000){
 			
@@ -38,15 +63,36 @@ public class Application extends Controller {
 					 Double lat = (Double)((Object[])o)[2];
 					 Double lon = (Double)((Object[])o)[3];
 					
-					 VehicleObservation vo = new VehicleObservation(time.getTime(), GeoUtils.convertLatLonToEuclidean(new Coordinate(lat, lon)));
 					 Long vehicleId = graph.getVehicleId(imei);
+					 
+					 VehicleObservation vo = new VehicleObservation(vehicleId, time.getTime(), GeoUtils.convertLatLonToEuclidean(new Coordinate(lat, lon)));
+					
 					 graph.updateVehicle(vehicleId, vo);
 				 }
 			 }
 	        ok();
 	    }
 
-	 public static void saveCebuStats() {
+	public static void index() {
+		
+		render();
+		 
+	}
+	
+	public static void simulator() {
+		
+		render();
+		 
+	}
+
+	public static void paths() {
+		
+		render();
+		 
+	}
+
+		 
+	public static void saveCebuStats() {
 		    
 		for(Integer edge : graph.getEdgesWithStats()) {
 			StatsEdge.nativeInsert(edge, graph.getEdgeSpeed(edge), graph.getTrafficEdge(edge).getGeometry());
@@ -61,6 +107,22 @@ public class Application extends Controller {
     	Coordinate coord2 = graph.getRandomPoint();
    
     	List<Integer> edges = graph.getEdgesBetweenPoints(coord1, coord2);
+    	
+    	MapEventData med = new MapEventData();
+		
+		med.message = "";
+		med.type = "simulatePath";
+		med.geom = graph.getPathForEdges(edges);
+
+		ObjectMapper mapper = new ObjectMapper();
+	
+		try {
+			String event = mapper.writeValueAsString(med);
+			MapEvent.instance.event.publish(event);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
     	
     	VehicleState vs = new VehicleState((long)1, graph);
     	vs.simulateUpdatePosition(edges, 15.0);

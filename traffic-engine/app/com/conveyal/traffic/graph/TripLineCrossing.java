@@ -1,5 +1,15 @@
 package com.conveyal.traffic.graph;
 
+import java.io.IOException;
+
+import models.MapEvent;
+
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.ObjectMapper;
+
+import util.GeoUtils;
+import util.MapEventData;
+
 public class TripLineCrossing implements Comparable<TripLineCrossing> {
 	
 	private final MovementEdge me;
@@ -11,6 +21,15 @@ public class TripLineCrossing implements Comparable<TripLineCrossing> {
 		this.me = me;
 		this.tl = tl;
 		this.timeAtCrossing = timeAtCrossing;
+
+		
+		try {
+			MapEvent.instance.event.publish(this.mapEvent());
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+	
 	}
 	
 	public boolean isType(int type) {
@@ -41,5 +60,20 @@ public class TripLineCrossing implements Comparable<TripLineCrossing> {
 			return 1;
 		else 
 			return 0;
+	}
+	
+	public String mapEvent() throws JsonGenerationException, IOException {
+	
+		
+		MapEventData med = new MapEventData();
+		
+		med.message = "";
+		med.type = "tripLine";
+		med.geom = tl.getGeometryLonLat();
+
+		ObjectMapper mapper = new ObjectMapper();
+	
+		return mapper.writeValueAsString(med);
+	
 	}
 }
