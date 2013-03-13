@@ -1,0 +1,43 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="#444"
+    android:orientation="vertical" >
+
+    <ListView
+        android:id="@+id/messageListView"
+        android:layout_width="match_parent"
+        android:layout_weight="1"
+        android:layout_height="fill_parent" >
+
+    </ListView>
+
+    <EditText
+        android:id="@+id/sendMessageText"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:ems="10"
+        android:inputType="textPostalAddress"
+        android:maxLines="3" >
+    </EditText>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <Button
+            android:id="@+id/sendButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.60"
+         
+            android:text="Send"/>
+
+        <Button
+            android:id="@+id/clearMessage"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:text="Clear" />
+    </LinearLayout>
+
+</LinearLayout>

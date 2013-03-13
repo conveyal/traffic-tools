@@ -14,4 +14,6 @@ public interface ILocationServiceClient {
 	public void showRegistration();
 	public void showLogin();
 	
+	public void showMessages();
+	
 }

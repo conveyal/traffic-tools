@@ -11,6 +11,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.conveyal.trafficprobe.TrafficProbeProtos.LocationUpdate;
+import com.google.android.gcm.GCMRegistrar;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.JsonHttpResponseHandler;
@@ -22,6 +23,7 @@ import de.tavendo.autobahn.WebSocketHandler;
 
 import android.app.AlarmManager;
 import android.app.Application;
+import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -40,11 +42,14 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.BatteryManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
@@ -52,14 +57,24 @@ import android.util.Log;
 
 public class LocationService extends Service {
 
+
+	public static String 	SERVER 					= "cebutraffic.org";
+	
+	
+	public  static String 	GCM_SENDER_ID 			= "484367360719";
+
 	private static int 		GPS_RETRY_INTERVAL 		= 15; 	// seconds 
 	private static int 		GPS_UPDATE_INTERVAL 	= 5; 	// seconds 
 	private static long		MIN_ACCURACY 			= 15; 	// meters
 	private static int 		MIN_TRANSMIT_INTERVAL 	= 30; 	// seconds
-	private static String 	URL_BASE 				= "http://cebutraffic.org/";
+	public static String 	URL_BASE 				= "http://" + SERVER +"/";
 	
-	private static String  	WS_LOCATION_URL			= "ws://cebutraffic.org/ws/location";
-	private static String  	HTTP_LOCATION_URL		= "http://cebutraffic.org/api/locationPb";
+	private static String  	WS_LOCATION_URL			= "ws://" + SERVER +"/ws/location";
+	private static String  	HTTP_LOCATION_URL		= "http://" + SERVER +"/api/locationPb";
+	
+	// intents
+	
+	public static String 	DISPLAY_MESSAGE_ACTION	= "com.conveyal.trafficprobe.intent.DISPLAY_MESSAGE_ACTION";
 	
 	//private static String  	WS_LOCATION_URL			= "ws://192.168.120.145:9001/ws/location";
 	//private static String  	HTTP_LOCATION_URL		= "http://192.168.120.145:9001/api/locationPb";
@@ -104,8 +119,6 @@ public class LocationService extends Service {
 	private static Intent batteryStatus;
 	private static int signalStrength;
 	
-	private Date lastTransmitTime = null;
-	
 	private static ProbeWebsocket websocket;
 
 	private static Integer transmitFrequency;
@@ -115,14 +128,58 @@ public class LocationService extends Service {
 	private static boolean gpsEnabled;
 	private static boolean useWebsockets;
 	
+	public static List<Message> messages = new ArrayList<Message>();
+	
 	private static List<Location> locationUpdateList = Collections.synchronizedList(new ArrayList<Location>());
 
-	private class AppPhoneStateListener extends PhoneStateListener {
-		@Override
-		public void onSignalStrengthsChanged(SignalStrength signalStrength) {
-			LocationService.signalStrength = signalStrength.getGsmSignalStrength();	        
-		}
-	}
+	private BroadcastReceiver messageReceiver = new BroadcastReceiver() {
+		  @Override
+		  public void onReceive(Context context, Intent intent) {
+		    // Get extra data included in the Intent
+		    if(intent != null && intent.getAction().equals(DISPLAY_MESSAGE_ACTION)) {
+		    	LocationService.mainServiceClient.showMessages();
+		    }
+		  }
+		};
+		
+	private BroadcastReceiver networkStatusReceiver = new BroadcastReceiver() {
+			  @Override
+			  public void onReceive(Context context, Intent intent) {
+			    // Get extra data included in the Intent
+			    if(intent != null && intent.getAction().equals(ConnectivityManager.CONNECTIVITY_ACTION)) {
+			    	
+			    	ConnectivityManager connectivity = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+
+			    	NetworkInfo i = connectivity.getActiveNetworkInfo();
+			        if ((i == null)||(!i.isConnected())||(!i.isAvailable())) {
+			        	
+			        	Log.i("networkStatusReceiver", "network not connected");
+			        	
+			        	networkStatus = "disconnected";
+			        	if(mainServiceClient != null)
+			        		LocationService.mainServiceClient.setNetworkStatus(networkStatus);
+			        }
+			        else {
+			        	
+			        	networkStatus = "connecting...";
+			        	
+			        	if(mainServiceClient != null)
+			        		LocationService.mainServiceClient.setNetworkStatus(networkStatus);	
+			        	
+			        	Log.i("networkStatusReceiver", "connected");
+			        	
+			        	if(!loggedIn) {
+			        		Log.i("networkStatusReceiver", "logging in...");
+			        		
+			        		doAuthenticate();
+			        	}
+			        	else
+			        		Log.i("networkStatusReceiver", "already logged in");
+			        }
+			    }
+			  }
+			};
 	
 	public static byte[] createLocationUpdate(Long phoneId, List<Location> locations)
 	{
@@ -133,11 +190,15 @@ public class LocationService extends Service {
 		
 		
 		if(sendDiagnosticData) {
+			
+			IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+			batteryStatus = appContext.registerReceiver(null, ifilter);
+			
+	
 
 			// Are we charging / charged?
 			int status = batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
-			Boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
-			                     status == BatteryManager.BATTERY_STATUS_FULL;
+			Boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL;
 
 			// Get battery charge level
 			int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
@@ -230,6 +291,11 @@ public class LocationService extends Service {
         alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         gpsNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         
+        appContext.registerReceiver(networkStatusReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION ) );
+        
+        LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver,
+        	      new IntentFilter(DISPLAY_MESSAGE_ACTION));
+        
         if(imei == null)
         {
         	TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
@@ -237,9 +303,6 @@ public class LocationService extends Service {
         }
         
         doAuthenticate();
-        
-        IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-		batteryStatus = getApplicationContext().registerReceiver(null, ifilter);
 		
 		AppPhoneStateListener phoneStateListener  = new AppPhoneStateListener();
 		TelephonyManager telephonyManager = ( TelephonyManager )getSystemService(Context.TELEPHONY_SERVICE);
@@ -301,6 +364,8 @@ public class LocationService extends Service {
     	startGps();
     	
     	startAlarm();
+    	
+    	startGCM();
     	
     	if(useWebsockets) {
     		websocket.start();
@@ -396,6 +461,16 @@ public class LocationService extends Service {
     	
     	Log.i("LocationService", "doAuthenticate");
     	
+    	ConnectivityManager connectivity = (ConnectivityManager)appContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+       	NetworkInfo i = connectivity.getActiveNetworkInfo();
+       	
+       	if ((i == null)||(!i.isConnected())||(!i.isAvailable())) {
+       		Log.i("LocationService", "doAuthenticate network not connected.");
+       		 
+       		return;      
+       	}
+       		
+    	
     	RequestParams params = new RequestParams();
     	
     	params.put("imei", LocationService.imei);
@@ -431,6 +506,9 @@ public class LocationService extends Service {
 		    }
 		    
 		    public void onFailure(Throwable error, String content) {
+		    	
+		    	Log.i("LocationService", "doAuthenticate authenticated failed: "  + error.getMessage() + " -- " + content);		   
+		    	
 		    	doRegisterPrompt();
 		    	loggedIn = false;
 		    }
@@ -456,7 +534,7 @@ public class LocationService extends Service {
 		    	try {
 		    		LocationService.driver = response.getString("driverId");
 		    		LocationService.bodyNumber = response.getString("bodyNumber");
-		    		operator = response.getString("name");
+		    		LocationService.operator = response.getString("name");
 		    		
 		    		if(LocationService.mainServiceClient != null) {
 		    			LocationService.mainServiceClient.setDriver(LocationService.driver);
@@ -568,7 +646,9 @@ public class LocationService extends Service {
     private void handleIntent(Intent intent)
     {
     	// handle received intents
+    	
     }
+ 
     
     public static void sendLocationList()
     {
@@ -666,6 +746,20 @@ public class LocationService extends Service {
     	
     	locationUpdateList.add(location);
     	
+    }
+    
+    private void startGCM() {
+    	
+    	GCMRegistrar.checkDevice(this);
+    	GCMRegistrar.checkManifest(this);
+    	
+    	final String regId = GCMRegistrar.getRegistrationId(this);
+    	
+    	if (regId.equals("")) {
+    	  GCMRegistrar.register(this, GCM_SENDER_ID);
+    	} else {
+    	  Log.v("startGCM", "Already registered");
+    	}
     }
     
     
@@ -766,8 +860,6 @@ public class LocationService extends Service {
                 SystemClock.elapsedRealtime() + GPS_RETRY_INTERVAL * 1000, pi); */
 
     }
-	
-    
 	
 	public class LocationServiceBinder extends Binder
     {
@@ -892,6 +984,13 @@ public class LocationService extends Service {
 
 	}
 	
+	private class AppPhoneStateListener extends PhoneStateListener {
+		@Override
+		public void onSignalStrengthsChanged(SignalStrength signalStrength) {
+			LocationService.signalStrength = signalStrength.getGsmSignalStrength();	        
+		}
+	}
+	
 	
 	public class ProbeWebsocket {
 		
@@ -952,7 +1051,6 @@ public class LocationService extends Service {
 		 	        			 //TODO Auto-generated catch block
 		 	        			 e.printStackTrace();	
 		 	        		}
-		 	        		 
 		 	        	 }
 		 	        	 
 		 	        	 websocketConnection.sendTextMessage("CONNECTION " + version + " " + imei + " (" + phoneId +")" );
@@ -1001,5 +1099,7 @@ public class LocationService extends Service {
 		 	}
 
 	}
+
+
 
 }

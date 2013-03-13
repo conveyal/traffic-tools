@@ -17,7 +17,7 @@
         android:src="@drawable/logo" />
 
     <TextView
-        android:id="@+id/textView1"
+        android:id="@+id/messageDateTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"

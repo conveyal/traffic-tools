@@ -48,7 +48,7 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
 
         public void onServiceConnected(ComponentName name, IBinder service)
         {
-        	locationService = ((LocationService.LocationServiceBinder) service).getService();
+        	locationService = ((LocationService.LocationServiceBinder)service).getService();
         	LocationService.setServiceClient(ProbeMainActivity.this);
         }
     };
@@ -86,15 +86,15 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
 						startActivity(settingsIntent);
 						break;
 						
-//					case R.id.mailButton:
-//						
-//						if(!LocationService.isLoggedIn())
-//							return;
-//						
-//						Intent mailIntent = new Intent(ProbeMainActivity.this,
-//						ProbePreferences.class);
-//						startActivity(mailIntent);
-//						break;
+					case R.id.mailButton:
+						
+						if(!LocationService.isLoggedIn())
+							return;
+						
+						Intent mailIntent = new Intent(ProbeMainActivity.this,
+						ProbeMessageActivity.class);
+						startActivity(mailIntent);
+						break;
 					
 					case R.id.mapButton:
 						
@@ -124,8 +124,8 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
 		   ImageButton settingsButton = (ImageButton) findViewById(R.id.settingsButton);
 		   settingsButton.setOnClickListener(listener);
 		   
-		   //ImageButton mailButton = (ImageButton) findViewById(R.id.mailButton);
-		   //mailButton.setOnClickListener(listener);
+		   ImageButton mailButton = (ImageButton) findViewById(R.id.mailButton);
+		   mailButton.setOnClickListener(listener);
 		   
 		   ImageButton mapButton = (ImageButton) findViewById(R.id.mapButton);
 		   mapButton.setOnClickListener(listener);
@@ -212,7 +212,6 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
 		serviceIntent = new Intent(this, LocationService.class);
      
         startService(serviceIntent);
-        
         bindService(serviceIntent, locationServiceConnection, Context.BIND_AUTO_CREATE);
         serviceBound = true;
 	}
@@ -245,6 +244,12 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
 	public void showLogin() {
 		Intent loginIntent = new Intent(ProbeMainActivity.this,
 		ProbeLoginActivity.class);
+		startActivity(loginIntent);
+	}
+	
+	public void showMessages() {
+		Intent loginIntent = new Intent(ProbeMainActivity.this,
+		ProbeMessageActivity.class);
 		startActivity(loginIntent);
 	}
 	
