@@ -58,7 +58,7 @@ import android.util.Log;
 public class LocationService extends Service {
 
 
-	public static String 	SERVER 					= "cebutraffic.org";
+	public static String 	SERVER 					= "cebutraffic.org"; //"192.168.43.137:9000";
 	
 	
 	public  static String 	GCM_SENDER_ID 			= "484367360719";
@@ -75,6 +75,7 @@ public class LocationService extends Service {
 	// intents
 	
 	public static String 	DISPLAY_MESSAGE_ACTION	= "com.conveyal.trafficprobe.intent.DISPLAY_MESSAGE_ACTION";
+	public static String 	ALERT_UPDATE_ACTION	= "com.conveyal.trafficprobe.intent.ALERT_UPDATE_ACTION";
 	
 	//private static String  	WS_LOCATION_URL			= "ws://192.168.120.145:9001/ws/location";
 	//private static String  	HTTP_LOCATION_URL		= "http://192.168.120.145:9001/api/locationPb";
@@ -135,6 +136,7 @@ public class LocationService extends Service {
 	private BroadcastReceiver messageReceiver = new BroadcastReceiver() {
 		  @Override
 		  public void onReceive(Context context, Intent intent) {
+			  
 		    // Get extra data included in the Intent
 		    if(intent != null && intent.getAction().equals(DISPLAY_MESSAGE_ACTION)) {
 		    	LocationService.mainServiceClient.showMessages();
@@ -755,11 +757,11 @@ public class LocationService extends Service {
     	
     	final String regId = GCMRegistrar.getRegistrationId(this);
     	
-    	if (regId.equals("")) {
+    	//if (regId.equals("")) {
     	  GCMRegistrar.register(this, GCM_SENDER_ID);
-    	} else {
-    	  Log.v("startGCM", "Already registered");
-    	}
+    	//} else {
+    	//  Log.v("startGCM", "Already registered");
+    	//}
     }
     
     

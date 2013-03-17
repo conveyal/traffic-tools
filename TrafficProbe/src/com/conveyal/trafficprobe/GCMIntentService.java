@@ -58,10 +58,20 @@ public class GCMIntentService extends GCMBaseIntentService {
 	    	
 	    	LocationService.messages.add(m);    
 	    	
-	    	  Intent intent = new Intent(LocationService.DISPLAY_MESSAGE_ACTION);
+    	  Intent intent = new Intent(LocationService.DISPLAY_MESSAGE_ACTION);
+    	  // You can also include some extra data.
+    	  intent.putExtra("message", "This is my message!");
+    	  LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    	  
+		} 
+		else if(messageIntent.getExtras().containsKey("type") && messageIntent.getExtras().get("type").equals("alertUpdate")) {
+		
+			Log.i("onMessage gcm", "alertUpdate");
+			Intent intent = new Intent(LocationService.ALERT_UPDATE_ACTION);
 	    	  // You can also include some extra data.
 	    	  intent.putExtra("message", "This is my message!");
 	    	  LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+			
 		}
 	}	
 
