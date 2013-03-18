@@ -1,0 +1,18 @@
+#{extends 'main.html' /}
+
+#{set page:'taxi' /}
+<div class="row-fluid" style="background-color: #fff;">
+
+<h3>Taxi O/M Report</h3>
+
+<table class="table">
+<tr><th>Body Number</th><th>Distance Today (km)</th><th>Distance Last Seven Days (km)</th><th>Distance Last Thirty Days (km)</th></tr>
+
+#{list items:vehicles, as:'vehicle'}
+
+<tr><td>${vehicle.bodyNumber}</td><td>${vehicle.getDistanceToday().format('#.##')}</td><td>${vehicle.getDistanceSevenDays().format('#.##')}</td><td>${vehicle.getDistanceThirtyDays().format('#.##')}</td></tr>
+
+#{/list}
+</table>
+
+</div>

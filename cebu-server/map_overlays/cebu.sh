@@ -1,0 +1,26 @@
+liteserv.py  ~/data/cebu_overlay.xml -p 9049 &
+
+liteserv.py  ~/data/cebu_overlay_c0.xml -p 9050 &
+liteserv.py  ~/data/cebu_overlay_c1.xml -p 9051 &
+liteserv.py  ~/data/cebu_overlay_c2.xml -p 9052 &
+liteserv.py  ~/data/cebu_overlay_c3.xml -p 9053 &
+liteserv.py  ~/data/cebu_overlay_c4.xml -p 9054 &
+liteserv.py  ~/data/cebu_overlay_c5.xml -p 9055 &
+liteserv.py  ~/data/cebu_overlay_c6.xml -p 9056 &
+liteserv.py  ~/data/cebu_overlay_c7.xml -p 9057 &
+liteserv.py  ~/data/cebu_overlay_c8.xml -p 9058 &
+liteserv.py  ~/data/cebu_overlay_c9.xml -p 9059 &
+liteserv.py  ~/data/cebu_overlay_c10.xml -p 9060 &
+liteserv.py  ~/data/cebu_overlay_c11.xml -p 9061 &
+liteserv.py  ~/data/cebu_overlay_c12.xml -p 9062 &
+liteserv.py  ~/data/cebu_overlay_c13.xml -p 9063 &
+liteserv.py  ~/data/cebu_overlay_c14.xml -p 9064 &
+liteserv.py  ~/data/cebu_overlay_c15.xml -p 9065 &
+liteserv.py  ~/data/cebu_overlay_c16.xml -p 9066 &
+liteserv.py  ~/data/cebu_overlay_c17.xml -p 9067 &
+liteserv.py  ~/data/cebu_overlay_c18.xml -p 9068 &
+liteserv.py  ~/data/cebu_overlay_c19.xml -p 9069 &
+liteserv.py  ~/data/cebu_overlay_c20.xml -p 9020 &
+liteserv.py  ~/data/cebu_overlay_c21.xml -p 9021 &
+liteserv.py  ~/data/cebu_overlay_c22.xml -p 9022 &
+liteserv.py  ~/data/cebu_overlay_c23.xml -p 9023 &

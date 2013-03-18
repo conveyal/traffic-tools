@@ -1,0 +1,60 @@
+Alert(flood):
+       type: flood
+       title: Flood on M.J. Cucenco Ave
+       timestamp: 2012-07-10 12:30:10 
+       location_lat: 10.312174859088344
+       location_lon: 123.91011714935303
+       description: Major flooding on M.J. Cucenco Ave, avoid area.
+
+
+Alert(incident):
+       type: incident
+       title: Multi-vehicle colision at Fuente Osmena  
+       timestamp: 2012-07-11 02:30:10 
+       location_lat: 10.310485969214884 
+       location_lon: 123.89355182647705
+       description: Multi-vehicle colision at Fuente Osmena, all lanes blocked.
+
+
+Alert(dispatch):
+       type: dispatch
+       title: Pickup on Hipolito St
+       timestamp: 2012-07-11 02:30:10 
+       location_lat: 10.330878708454897
+       location_lon: 123.87986183166504
+       description: Pickup on Hipolito St
+
+
+Alert(dc):
+       type: incident
+       title: Test alert for DC
+       timestamp: 2012-07-11 02:30:10 
+       location_lat: 38.905595
+       location_lon: -77.038622
+       description: Test alert for DC
+
+Alert(dctwo):
+       type: incident
+       title: Another test alert for DC
+       timestamp: 2012-07-11 02:30:10 
+       location_lat: 38.905595
+       location_lon: -77.038622
+       description: Another test alert for DC
+
+Alert(dcthree):
+       type: incident
+       title: Test alert for DC 2
+       timestamp: 2012-07-11 02:30:10 
+       location_lat: 38.905595
+       location_lon: -77.038622
+       description: Test alert for DC
+
+Alert(dcfour):
+       type: incident
+       title: Another test alert for DC 4
+       timestamp: 2012-07-11 02:30:10 
+       location_lat: 38.905595
+       location_lon: -77.038622
+       description: Another test alert for DC
+
+

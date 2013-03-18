@@ -1,0 +1,12 @@
+Message(return):
+       timestamp: 2007-07-12 12:30:10 
+       body: Reutrn to base! 
+       tophone_id: 10
+
+Message(where):
+       timestamp: 2007-07-12 12:35:10 
+       body: Where are you? 
+       tophone_id: 10
+
+
+

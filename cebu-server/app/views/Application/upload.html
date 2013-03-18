@@ -1,0 +1,36 @@
+<html>
+<body>
+<div id="upload" style="padding: 2px; border: 1px solid black">
+
+	  #{form @Application.uploadHandler(), enctype:'multipart/form-data'}
+   
+    <select name="filterTypeName">
+     	#{list items:filters, as:'filter'}
+      <option value="${filter}">${filter}</option>
+      #{/list}
+    </select><br>
+    
+    <input name="seed_str" type="text" value="0"/>
+	   <label for="seed_str">Random seed (enter 0 for none)</label><br>
+	 	<input name="obs_variance_pair" type="text" value="100, 100"/> 
+	   <label for="obs_variance_pair">Observation Variance (x,y) in meters</label><br>
+	 	<input name="road_state_variance_pair" type="text" value="6.25e-4, 6.25e-4"/> 
+	   <label for="road_state_variance_pair">On-road State Variance (errors due to acceleration, (dist,velocity))</label><br>
+	 	<input name="ground_state_variance_pair" type="text" value="6.25e-4, 6.25e-4"/> 
+	    <label for="ground_state_variance_pair">Off-road State Variance (errors due to acceleration, (location,velocity))</label><br>
+	 	<input name="off_prob_pair" type="text" value="5e-2, 1"/>
+	    <label for="off_prob_pair">Off- to off-road, off- to on-road weights (unnormalized)</label><br>
+	 	<input name="on_prob_pair" type="text" value="1, 5e-2"/>
+	    <label for="on_prob_pair">On- to on-road, on- to off-road weights (unnormalized)</label><br>
+	 	<input name="numParticles_str" type="text" value="50"/>
+	    <label for="numParticles_str">Number of particles</label><br>
+	 	<input name="debugEnabled" id="debugEnabled" type="checkbox" value="true"/>
+	    <label for="enableDebug">Enable debug for this trace</label><br>
+	 				<input name="csv" type="file"/>
+	                <input type="submit"/>
+	 #{/form}
+
+
+</div>
+</body>
+</html>

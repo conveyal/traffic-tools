@@ -1,0 +1,93 @@
+#{extends 'main.html' /}
+
+#{set page:'taxi' /}
+
+<script id="taxi-sidebar-tpl" type="text/html">
+
+	
+
+</script>
+
+<script id="taxi-popup-tpl" type="text/x-handlebars-template">
+	<div>
+		<div class="row-fluid">
+		
+			<div class="row-fluid">
+				{{#if panic}}<img src="/public/images/crime.png"/>{{else}}<img src="/public/images/taxi.png"/>{{/if}}&nbsp;<strong>{{ vehicle }} -- {{ driver }}</strong> {{#panic}}<button id="clearPanic" type="button" value="all" class="btn btn-mini">Clear Panic</button>{{/panic}}				
+			</div>
+
+			{{#if messages }}
+				<br/>
+				<div  class="row-fluid" style="max-height: 100px; overflow:auto;">
+					{{#messages}}
+						<hr style="margin: 5px 0;">
+
+						<em>{{ timestamp }}</em> <br/>
+						{{ body }}
+					{{/messages}}
+				</div>
+			{{/if}}	
+			
+			<br/>
+			<div class="row-fluid">
+				
+				<textarea id="messageText" style="width: 300px;" placeholder="Message..." data-id="{{ id }}"></textarea><br/>
+
+				{{#if messages }}
+				<button id="clearMessages" type="button" value="all" class="btn btn btn-small pull-right">Clear Messages</button>
+				{{/if}}	
+
+				<button id="sendMessage" type="button" value="all" class="btn btn-primary btn-small">Send Message</button>
+
+			</div>
+
+		</div>
+	</div>
+
+</script>
+
+
+<div class="row-fluid" style="background-color: #fff;  position: relative;">
+
+	<div id="map"></div>
+
+	<div style="position: absolute; top:10px; right:10px; width:250px;">
+		<div class="well well-small">
+		
+		<strong>Taxis</strong> 
+		<hr style="margin: 5px 0;">
+		<div  data-toggle-name="showToggle" class="btn-group" data-toggle-name="is_private" data-toggle="buttons-radio" style="padding-bottom: 10px;" >
+ 			<button id="showActive" type="button" value="all" class="btn active">Active</button>
+ 			<button id="showWithMessages" value="active" class="btn">Messages</button>
+ 			<button id="showAll" type="button" value="all" class="btn">All</button>
+		</div>
+		<!-- <input id="filterInput" type="text" placeholder="Driver or Body Number" style="width:100%" /><br/> -->
+
+		<input type="checkbox"/ id="showLabels"> <strong>Show Labels</strong> <br/>
+		
+		<hr style="margin: 5px 0;">
+		
+		<input type="checkbox"/ id="trafficAlerts"> <strong>Traffic Alerts</strong> <br/>
+		<input type="checkbox"/ id="currentConditions"> <strong>Current Conditions</strong> 
+		
+
+		<table style="margin-left: 25px;">
+			<tr><td style="background-color: red;">&nbsp;</td><td>&nbsp;&lt; 25km/h</td></tr>
+			<tr><td style="background-color: yellow;">&nbsp;</td><td>&nbsp;25-35km/h</td></tr>
+			<tr><td style="background-color: green;">&nbsp;</td><td>&nbsp;&gt; 35km/h</td></tr>
+		</table>
+		
+	</div>
+
+</div>
+
+
+#{script "taxi/taxi-backbone.js"/}
+#{script "taxi/taxi-map.js"/}
+
+
+
+		
+
+
+

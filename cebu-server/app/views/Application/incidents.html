@@ -1,0 +1,38 @@
+#{extends 'main.html' /}
+
+#{set page:'citom' /}
+
+<script id="incidentSave" type="text/html">
+<h3>Create Incident</h3><br/> 	
+<select id="newIncidentType"><option value="incident">Traffic Incident</option><option value="flood">Flooding</option></select>
+<textarea id="newIncidentDescription"></textarea><br/>
+<button onclick="saveMarker();">Save</button> <button onclick="cancelMarker();">Cancel</button>
+</script>
+
+<script id="incident" type="text/html">
+<p><strong>{{ description }}</strong><br/> ({{ timestamp }})</p>
+<ul>
+{{#messages}}
+  <b>{{description}}</b><br/>
+	 ({{ timestamp }})
+ <hr/>
+{{/messages}}
+</ul>
+<br/>
+
+New message:
+<textarea id="message{{ id }}"></textarea><br/>
+
+<button onclick="saveMessage({{ id }});">Save Message</button> <button onclick="clearAlert({{ id }});">Clear Alert</button>
+</script>
+
+
+<div class="row-fluid" style="background-color: #fff;">
+
+	<div id="map">
+	</div>
+	
+	
+</div>	 
+
+<script src="@{'/public/javascripts/cebu_incidents.js'}"></script>

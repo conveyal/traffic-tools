@@ -1,0 +1,168 @@
+#{extends 'main.html' /}
+
+#{set page:'citom' /}
+
+<script id="incidentSave" type="text/html">
+<h3>Create Incident</h3><br/> 	
+<select id="newIncidentType"><option value="incident">Traffic Incident</option><option value="flood">Flooding</option></select>
+<textarea id="newIncidentDescription"></textarea><br/>
+<button onclick="saveMarker();">Save</button> <button onclick="cancelMarker();">Cancel</button>
+</script>
+
+<script id="incident" type="text/html">
+<p><strong>{{ description }}</strong><br/> ({{ timestamp }})</p>
+<ul>
+{{#messages}}
+  <b>{{description}}</b><br/>
+	 ({{ timestamp }})
+ <hr/>
+{{/messages}}
+</ul>
+<br/>
+
+New message:
+<textarea id="message{{ id }}"></textarea><br/>
+
+<button onclick="saveMessage({{ id }});">Save Message</button> <button onclick="clearAlert({{ id }});">Clear Alert</button>
+</script>
+
+
+<div class="row-fluid" style="background-color: #fff;  position: relative;">
+
+
+
+	<div id="map">
+	</div>
+	
+	<div style="position: absolute; top:10px; right:10px; width:250px;">
+		<div class="well well-small"><strong>Journey Estimate</strong> <span style="float: right;"><span id="saveButton"><a href="#" onclick="savePath();">Save</a> |</span> <a href="#" onclick="clearRoute();">Clear</a></span>
+		
+		<hr style="margin: 5px 0;">
+		<span id="clickIntro">Click the map to add start/end points.</span>
+		<span id="dragIntro">Drag points to change route.</span>
+		<br/>
+		<div style="float: right; margin-left: 10px;">
+		<h2 id="journeyTime">--</h2>mins</div>
+		
+		<div style="float: left; margin-left: 10px;">
+		<h2 id="journeyDistance">--</h2>km
+		</div>
+		
+		<div style="margin-left: 100px;">
+		<h2 id="avgSpeed">--</h2>km/h
+		</div>
+		
+		<hr style="margin: 5px 0;">
+		
+		<strong>Compare</strong>	
+		<br/>	
+		<select onchange="compare();" id="compareWith" style="width: 120px"><option value="--">--</option><option>Last Hour</option><option>Last 12 Hours</option><option>Last 24 Hours</option><option value="custom">Custom</option></select> 
+		
+		<div id="customCompare1">
+			<input style="width: 100px;" type="text" value="12-24-2012" id="datepicker1">
+		
+			<div style="width: 200px;">Time: <span id="timerange1"></span>
+				<div id="slider-range1"></div>
+			</div>
+		</div>
+		<div style="width: 100px; margin-top: 10px; margin-bottom: 10px;"><strong> -- against -- </strong></div>
+		<select onchange="compare();" id="compareAgainst" style="width: 120px"><option value="--">--</option><option>Yesterday</option><option>Last Week</option><option value="custom">Custom</option></select>
+	
+		<div id="customCompare2">
+			<input style="width: 100px;" type="text" value="12-24-2012" id="datepicker2">
+		
+			<div style="width: 200px;">Time: <span id="timerange2"></span>
+				<div id="slider-range2"></div>
+			</div>
+		</div>
+		<!--  <div id="dataNotAvailable"><strong>Data not available.</strong></div> -->
+		<br/>
+		<div style="float: right; margin-left: 10px;">
+		<h3 id="journeyTimeDelta">--</h2>mins</div>
+	
+		<div style="float: left; margin-left: 10px;">
+		<h3 id="journeyDistance">Change:</h3>
+		</div>
+	
+		<div style="margin-left: 100px;">
+		<h3 id="avgSpeedDelta">--</h2>km/h
+		</div>
+		<span style="float: right;">Comparison data unavailable.</span>
+		<br/>
+		<br/>
+		<strong>Saved Journeys</strong> 
+		
+		
+		#{list items:saveJourneys, as:'journey'}
+				<hr style="margin: 5px 0;">
+				${journey.name}<span style="float: right;"><a href="@{Citom.clearJourney(journey.id)}">Delete</a></span> <br/>
+				<div style="float: right; margin-left: 10px;">
+				<h3>${journey.time}</h3>mins</div>
+				
+				<div style="float: left; margin-left: 10px;">
+				<h3>${journey.distance}</h3>km
+				</div>
+				
+				<div style="margin-left: 100px;">
+				<h3>${journey.speed}</h3>km/h
+				</div>
+		#{/list}
+				
+		<hr style="margin: 5px 0;">
+		
+		<div class="btn-group pull-right " data-toggle-name="is_private" data-toggle="buttons-radio">
+ 			<button type="button" value="0" class="btn disabled" data-toggle="button">Relative</button>
+ 			<button type="button" value="1" class="btn disabled" data-toggle="button">Absolute</button>
+		</div>
+		<br clear="all"/>
+		
+		<hr style="margin: 5px 0;">
+		
+		<strong>Current Conditions</strong> <input type="checkbox"/ id="currentConditions" onclick="currentConditions();"> <!-- <a href="#" style="float: right;">Generate Report</a>  -->
+		
+		<table>
+			<tr><td style="background-color: red;">&nbsp;</td><td>&nbsp;&lt; 25km/h</td></tr>
+			<tr><td style="background-color: yellow;">&nbsp;</td><td>&nbsp;25-35km/h</td></tr>
+			<tr><td style="background-color: green;">&nbsp;</td><td>&nbsp;&gt; 35km/h</td></tr>
+		</table>
+		
+		</div>
+
+	</div>
+	
+	
+</div>	 
+
+<div id="saveJourney" class="modal hide" tabindex="-1" role="dialog" aria-labelledby="journeyModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id=""journeyModalLabel"">Save Journey</h3>
+  </div>
+  <div class="modal-body">
+ 
+    	<form method="POST" id="journeySaveForm" action="@{Citom.saveJourney()}" class="form-horizontal">
+	    	<input type="hidden" id="saveform_origin_lat" name="origin_lat" value=""/>
+	    	<input type="hidden" id="saveform_origin_lon" name="origin_lon" value=""/>
+	    	<input type="hidden" id="saveform_destination_lat" name="destination_lat" value=""/>
+	    	<input type="hidden" id="saveform_destination_lon" name="destination_lon" value=""/>
+	    	<input type="hidden" id="saveform_time" name="time" value=""/>
+	    	<input type="hidden" id="saveform_distance" name="distance" value=""/>
+	    	<input type="hidden" id="saveform_speed" name="speed" value=""/>
+    	
+		  <div class="control-group">
+		    <label class="control-label" for="name">Journey Name</label>
+		    <div class="controls">
+		      <input onchange="validateCreateUser();" type="text" id="saveform_name" name="name" placeholder="Journey Name"/>
+		    </div>
+		  </div>
+		</form>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+    <button id="saveJourneyButton"  class="btn btn-primary">Save</button>
+  </div>
+</div>
+
+<script src="@{'/public/javascripts/jquery-ui-1.8.23.custom.min.js'}"></script>
+<script src="@{'/public/bootstrap/js/bootstrap-datepicker.js'}"></script>
+<script src="@{'/public/javascripts/cebu_journey.js'}"></script>

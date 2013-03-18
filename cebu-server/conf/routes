@@ -1,0 +1,29 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+
+# Websocket handler	
+WS 		/ws/location							Ws.location
+
+# Home page
+GET     /                                       Application.index
+GET     /recent                                 Application.recent
+
+GET     /api/alerts/{type}                      Api.alerts
+
+GET     /citom/alerts/?                          Citom.alerts
+GET     /citom/alerts/{id}                       Citom.getAlert
+POST    /citom/alerts/                           Citom.createAlert
+PUT     /citom/alerts/{id}                       Citom.updateAlert
+DELETE  /citom/alerts/{id}                       Citom.deleteAlert
+
+
+# Ignore favicon requests
+GET     /favicon.ico                            404
+
+# Map static resources from the /app/public folder to the /public path
+GET     /public/                                staticDir:public
+
+# Catch all
+*       /{controller}/{action}                  {controller}.{action}

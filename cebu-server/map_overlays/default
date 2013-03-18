@@ -1,0 +1,134 @@
+# You may add here your
+# server {
+#	...
+# }
+# statements for each of your virtual hosts to this file
+
+##
+# You should look at the following URL's in order to grasp a solid understanding
+# of Nginx configuration files in order to fully unleash the power of Nginx.
+# http://wiki.nginx.org/Pitfalls
+# http://wiki.nginx.org/QuickStart
+# http://wiki.nginx.org/Configuration
+#
+# Generally, you will want to move this file somewhere, and start with a clean
+# file but keep this around for reference. Or just disable in sites-enabled.
+#
+# Please see /usr/share/doc/nginx-doc/examples/ for more detailed examples.
+##
+
+server {
+        #listen   80; ## listen for ipv4; this line is default and implied
+        #listen   [::]:80 default ipv6only=on; ## listen for ipv6
+
+     client_max_body_size       20M;
+
+
+     location / {
+        proxy_pass         http://127.0.0.1:9000/;
+
+        }
+
+
+# proxy to Apache 2 and mod_python
+location /tiles_avg {
+  proxy_pass         http://127.0.0.1:8010/tiles_avg;
+        }
+
+location /tiles_c0 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c0;
+        }
+
+location /tiles_c1 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c1;
+        }
+
+location /tiles_c2 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c2;
+        }
+
+location /tiles_c3 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c3;
+        }
+
+location /tiles_c4 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c4;
+        }
+
+location /tiles_c5 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c5;
+        }
+
+location /tiles_c6 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c6;
+        }
+
+location /tiles_c7 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c7;
+        }
+
+location /tiles_c8 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c8;
+        }
+
+location /tiles_c9 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c9;
+        }
+
+location /tiles_c10 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c10;
+        }
+
+location /tiles_c11 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c11;
+        }
+
+location /tiles_c12 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c12;
+        }
+
+location /tiles_c13 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c13;
+        }
+
+location /tiles_c14 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c14;
+        }
+
+location /tiles_c15 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c15;
+        }
+
+location /tiles_c16 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c16;
+        }
+
+location /tiles_c17 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c17;
+        }
+
+location /tiles_c18 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c18;
+        }
+
+location /tiles_c19 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c19;
+        }
+
+location /tiles_c20 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c20;
+        }
+
+location /tiles_c21 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c21;
+        }
+
+location /tiles_c22 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c22;
+        }
+
+location /tiles_c23 {
+  proxy_pass         http://127.0.0.1:8010/tiles_c23;
+        }
+
+}

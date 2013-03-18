@@ -1,0 +1,63 @@
+#{extends 'main.html' /}
+
+#{set page:'citom' /}
+
+<script id="incidentSave" type="text/html">
+<h3>Create Incident</h3><br/> 	
+<select id="newIncidentType"><option value="incident">Traffic Incident</option><option value="flood">Flooding</option></select>
+<textarea id="newIncidentDescription"></textarea><br/>
+<button onclick="saveMarker();">Save</button> <button onclick="cancelMarker();">Cancel</button>
+</script>
+
+<script id="incident" type="text/html">
+<p><strong>{{ description }}</strong><br/> ({{ timestamp }})</p>
+<ul>
+{{#messages}}
+  <b>{{description}}</b><br/>
+	 ({{ timestamp }})
+ <hr/>
+{{/messages}}
+</ul>
+<br/>
+
+New message:
+<textarea id="message{{ id }}"></textarea><br/>
+
+<button onclick="saveMessage({{ id }});">Save Message</button> <button onclick="clearAlert({{ id }});">Clear Alert</button>
+</script>
+
+
+<div class="row-fluid" style="background-color: #fff;  position: relative;">
+
+
+
+	<div id="map">
+	</div>
+	
+	<div style="position: absolute; top:10px; right:10px; width:200px;">
+		<div class="well well-small"><strong>Journey Estimate</strong>
+		<hr style="margin: 5px 0;"><div style="float: right; margin-left: 10px;">
+		<h2 id="journeyTime">--</h2>mins</div>
+		<div style="float: right;"></div><h2 id="journeyDistance">--</h2>km
+		
+		<hr style="margin: 5px 0;">
+		
+		<strong>Compare</strong>	
+		<br/>	
+		<select onchange="compare();" id="compareWith" style="width: 120px"><option value="--">--</option><option>Last Hour</option><option>Last 12 Hours</option><option>Last 24 Hours</option></select> 
+		against 
+		<select onchange="compare();" id="compareAgainst" style="width: 120px"><option value="--">--</option><option>Yesterday</option><option>Last Week</option><option value="date">Specific Date</option></select>
+	
+		<input style="width: 100px;" type="text" value="12-24-2012" id="datepicker">
+	
+		<div id="dataNotAvailable"><strong>Data not available.</strong></div>
+		
+		</div>
+		
+	</div>
+	
+	
+</div>	 
+
+<script src="@{'/public/javascripts/bootstrap-datepicker.js'}"></script>
+<script src="@{'/public/javascripts/cebu_journey.js'}"></script>

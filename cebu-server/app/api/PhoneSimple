@@ -1,0 +1,26 @@
+package models;
+
+
+public class PhoneSimple {
+
+	public Long phoneId;
+
+	public String imei;
+
+	public Boolean panic;
+	public Boolean messages;
+	
+	public Long driverId;
+	public Long vehicleId;
+	
+	public String driver;
+	public String vehicle;
+
+	public Date lastUpdate;
+	    
+    public Double recentLat;
+    public Double recentLon;
+
+    public functi
+
+  }

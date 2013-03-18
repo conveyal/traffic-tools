@@ -1,0 +1,190 @@
+#{extends 'main.html' /}
+
+#{set page:'citom' /}
+
+<style>.alertdrop.select2-container .select2-results {max-height: 300px;}</style>
+
+<script id="incident-edit-tpl" type="text/html">
+<div class="well well-small">
+		
+	<strong>Create/Edit Alert</strong> 
+
+	<hr style="margin: 5px 0;">
+
+	<div class="row-fluid">
+		<strong>Title</strong><br/>
+		<input class="span11" type="text" id="title" value="{{ title }}" placeholder="Title..."/>
+		<strong>Type</strong><br/>
+		<select id="type" style="width:220px;">
+			{{alert_options type}}
+		</select>
+		<br/>
+		<br/>
+		<strong>Publicly Visible</strong> <input type="checkbox" id="publiclyVisible" {{#if publiclyVisible}}checked{{/if}}/>
+		<br/>
+		<strong>CITOM Description</strong><br/>
+		<textarea class="span11"  id="description" placeholder="CITOM description...">{{ description }}</textarea>
+		<strong>Public Description</strong><br/>
+		<textarea class="span11" id="publicDescription" placeholder="Public description...">{{ publicDescription }}</textarea>
+		
+	</div>
+
+	<div class="row-fluid">
+		
+		<div class="span6">
+			<strong>From</strong><br/>
+				
+			<div class="input-append date" id="datepickerFrom">
+			  <input class="span8" size="16" type="text">
+			  <span class="add-on"><i class="icon-th"></i></span>
+			</div>
+
+			<div  class="input-append bootstrap-timepicker">
+		        <input  class="span8" type="text" class="input-small" id="timepickerFrom">
+		        <span class="add-on"><i class="icon-time"></i></span>
+		    </div>
+		    <button  class="btn btn-mini" id="fromNow">Now</button>
+		</div>
+
+		<div class="span6">
+			<strong>To</strong> 
+			<div class="input-append date" id="datepickerTo">
+			  <input class="span8" size="16" type="text" >
+			  <span class="add-on"><i class="icon-th"></i></span>
+			</div>
+
+			
+			<div  class="input-append bootstrap-timepicker" >
+		        <input  class="span8"type="text" class="input-small" id="timepickerTo">
+		        <span class="add-on"><i class="icon-time"></i></span>
+		    </div>
+		    <button  class="btn btn-mini" id="toNow">Now</button>
+		    <button  class="btn btn-mini" id="toClear">Clear</button>
+	    </div>
+	</div>
+    
+	<hr style="margin: 5px 0;">
+	<button  class="btn btn-primary" id="save">Save</button> <button class="btn" id="cancel">Cancel</button>
+
+</div>
+</script>
+
+<script id="incident-view-popup-tpl" type="text/html">
+<div>
+	<h3><img src="/public/images/alert_icons/{{ type }}.png"> {{ title }}</h3>	
+	<strong>Type:</strong> {{alertType type}}<br/>
+	<strong>Publicly Visible:</strong> {{#if publiclyVisible}}Yes{{else}}No{{/if}}<br/>
+	<strong>Description:</strong> {{description}}<br/>
+	<strong>Public Description:</strong> {{publicDescription}}<br/>
+	<strong>Active From:</strong> {{formatDate activeFrom }}<br/>
+	<strong>Active To:</strong> {{formatDate activeTo }}<br/>
+	{{#if messages }}
+		<strong>Messages:</strong>
+		<div  class="row-fluid" style="max-height: 100px; overflow:auto;">
+			
+
+			{{#messages}}
+				
+
+				<em>{{formatDate timestamp }}</em> ({{ account }}) <br/>
+				{{ description }}
+				<hr style="margin: 5px 0;">
+			{{/messages}}
+		</div>
+		<br/>
+	{{/if}}	
+	
+
+	<textarea id="message" placeholder="Message..."></textarea>
+	<br/>
+
+	<button  class="btn pull-right" id="editAlert">Edit Alert</button>
+	<button  class="btn btn-primary" id="sendMessage">Save Message</button>
+</div>
+</script>
+
+
+<script id="alert-filter-tpl" type="text/html">
+	<div class="well well-small">
+			
+		<strong>Traffic Alerts</strong> <!-- <a href="#" style="float: right;">Generate Report</a>  -->
+		
+		<p>Right-click map to add an alert.</p>
+		
+		<hr style="margin: 5px 0;">
+		
+		<div class="row-fluid">
+			<strong>Filter</strong>
+			<div data-toggle-name="showToggle" class="btn-group" data-toggle-name="is_private" data-toggle="buttons-radio" style="padding-bottom: 10px;" >
+					<button name="fitlerActive" id="showAll" type="button" value="all" class="btn">All</button>
+					<button name="fitlerActive" id="showActive" value="active" class="btn active">Active</button>
+			</div>
+
+			<input type="text" id="query" placeholder="keywords"/>
+		</div>
+
+		<div class="row-fluid">
+		<strong>Type</strong><br/>
+		<select id="typeFilter" style="width:220px;">
+			<option value="" selected="selected">All Types</option>
+			{{alert_options type}}
+		</select>
+		</div>
+
+
+		<hr style="margin: 5px 0;">
+
+		<div class="row-fluid" id="dataRangeFilter">
+			<strong>Date Range</strong><br/>
+			
+
+			<div class="input-append date" id="dateFrom">
+			  <input class="span5" size="16" type="text">
+			  <span class="add-on"><i class="icon-th"></i></span>
+			</div>
+			<div class="input-append date" id="dateTo">
+			  <input class="span5" size="16" type="text">
+			  <span class="add-on"><i class="icon-th"></i></span>
+			</div>
+
+
+			<button  class="btn btn-mini" id="filterToday">Today</button> <button  class="btn btn-mini" id="filterYesterday">Yesterday</button> <button  class="btn btn-mini" id="filterThisWeek">This Week</button>
+			<hr style="margin: 5px 0;">
+
+		</div>
+		<button id="updateFilter" class="btn btn-primary">Filter</button> <button id="downloadCsv" class="btn">Download Report</button>
+		
+		<hr style="margin: 5px 0;">
+		
+		<strong>Current Conditions</strong> <input type="checkbox" id="currentConditions"/> <!-- <a href="#" style="float: right;">Generate Report</a>  -->
+		
+		<table>
+			<tr><td style="background-color: red;">&nbsp;</td><td>&nbsp;&lt; 25km/h</td></tr>
+			<tr><td style="background-color: yellow;">&nbsp;</td><td>&nbsp;25-35km/h</td></tr>
+			<tr><td style="background-color: green;">&nbsp;</td><td>&nbsp;&gt; 35km/h</td></tr>
+		</table>
+
+	</div>
+</script>
+
+
+
+
+
+<div class="row-fluid" style="background-color: #fff;  position: relative;">
+
+	<div id="map">
+	</div>
+	
+	<div id="alertFilter" style="position: absolute; top:10px; right:10px; width:250px;">
+		
+	
+	</div>	
+
+	<div id="alertEditor" style="position: absolute; top:10px; left:50px; width:325px;">
+		
+	</div> 	
+</div>
+
+#{script "citom/alert-backbone.js"/}
+#{script "citom/alert-map.js"/}

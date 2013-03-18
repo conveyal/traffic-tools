@@ -1,0 +1,24 @@
+#{extends 'main.html' /}
+
+#{set page:'index' /}
+
+<div class="row-fluid" style="background-color: #fff;  position: relative;">
+<div id="map">
+</div>
+
+<div style="position: absolute; top:10px; right:10px; width:150px;">
+		<div class="well well-small">
+		
+		<strong>Current Conditions</strong> <!-- <a href="#" style="float: right;">Generate Report</a>  -->
+		
+		<table>
+			<tr><td style="background-color: #A50026;">&nbsp;</td><td>&nbsp;&lt; 20km/h</td></tr>
+			<tr><td style="background-color: #FDAE61;">&nbsp;</td><td>&nbsp;20-30km/h</td></tr>
+			<tr><td style="background-color: #1A9850;">&nbsp;</td><td>&nbsp;&gt; 30km/h</td></tr>
+		</table>
+		
+		</div>
+</div>
+</div>
+		
+<script src="@{'/public/javascripts/cebu_current.js'}"></script>

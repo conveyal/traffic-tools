@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- .ivy2/ivysettings.xml -->
+<ivy-settings>
+  <!-- path to local maven repo and default maven layout -->
+  <property name="local-maven2-pattern" 
+    value="${user.home}/.m2/repository/[organisation]/[module]/[revision]/[module]-[revision]" 
+    override="false" />
+ 
+  <!-- set resolver chain as default -->
+  <settings defaultResolver="main" />
+ 
+  <!-- configure caches -->
+  <caches repositoryCacheDir="${user.home}/.ivy2/cache">
+    <!-- do not cache from local .m2-->
+    <cache name="nocache" useOrigin="true" />
+    <cache name="default" />
+  </caches>
+ 
+  <resolvers>
+    <chain name="main">
+      <!-- as this is not cached, even changing SNAPSHOT dependencies 
+        are resolved correctly -->
+      <filesystem name="local-maven-2" m2compatible="true" local="true" 
+        cache="nocache">
+        <ivy pattern="${local-maven2-pattern}.pom" />
+        <artifact pattern="${local-maven2-pattern}(-[classifier]).[ext]" />
+      </filesystem>
+      <!-- use repository manager as proxy to maven-central
+        (and all other repositories)--> 
+      <ibiblio name="repomanager" m2compatible="true"
+        root="http://repo1.maven.org/maven2" cache="default"/>
+    </chain>
+  </resolvers>
+</ivy-settings>

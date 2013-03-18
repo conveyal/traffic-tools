@@ -1,0 +1,29 @@
+#{extends 'main.html' /}
+
+#{set page:'taxi' /}
+
+<div class="row-fluid" style="background-color: #fff;">
+
+	<div class="span2">
+	<ul class="nav nav-list" id="taxi_list">
+	  <li class="nav-header"> 
+	    Active Taxis
+	    <div style="display: none;" id="sendForm"><textarea style="width: 180px;" id="messageText"></textarea><button id="sendButton" onclick="sendMessage();">send</button></div>
+	  </li>
+	  
+	  
+		 
+	</ul>
+	</div>
+	<div class="span10" style="margin: 0px;"">
+	<div id="map">
+	</div>
+	</div>
+</div>
+
+<script type="text/javascript" src="@{'/public/javascripts/ember.min.js'}"></script>
+<script src="@{'/public/javascripts/cebu_taxi.js'}"></script>
+
+<script type="text/x-handlebars" data-template-name="message-view">
+    {{view.body}}
+</script>
