@@ -114,6 +114,7 @@ public class ProbeMessageActivity extends Activity {
 	private void clearMessage() {
 		
 		((EditText)findViewById(R.id.sendMessageText)).getEditableText().clear();
+		LocationService.messages.clear();
 	}
 	
 	private void updateMessages() {

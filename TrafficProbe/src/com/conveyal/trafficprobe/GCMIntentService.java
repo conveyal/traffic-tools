@@ -45,7 +45,6 @@ public class GCMIntentService extends GCMBaseIntentService {
 	@Override
 	protected void onMessage(Context arg0, Intent messageIntent) {
 
-		// forward compatibility with clearPanic messages 
 		if(!messageIntent.getExtras().containsKey("type") || messageIntent.getExtras().get("type").equals("message")) {
 			Log.i("onMessage gcm", messageIntent.getExtras().get("message").toString());
 		 
@@ -59,8 +58,6 @@ public class GCMIntentService extends GCMBaseIntentService {
 	    	LocationService.messages.add(m);    
 	    	
     	  Intent intent = new Intent(LocationService.DISPLAY_MESSAGE_ACTION);
-    	  // You can also include some extra data.
-    	  intent.putExtra("message", "This is my message!");
     	  LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     	  
 		} 
@@ -68,8 +65,13 @@ public class GCMIntentService extends GCMBaseIntentService {
 		
 			Log.i("onMessage gcm", "alertUpdate");
 			Intent intent = new Intent(LocationService.ALERT_UPDATE_ACTION);
-	    	  // You can also include some extra data.
-	    	  intent.putExtra("message", "This is my message!");
+	    	  LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+			
+		}
+		else if(messageIntent.getExtras().containsKey("type") && messageIntent.getExtras().get("type").equals("clearPanic")) {
+			
+			Log.i("onMessage gcm", "clearPanic");
+			Intent intent = new Intent(LocationService.CLEAR_PANIC_ACTION);
 	    	  LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 			
 		}

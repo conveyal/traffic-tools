@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +28,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -62,6 +64,7 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
 		
 		TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
 		LocationService.imei = telephonyManager.getDeviceId();
+		LocationService.phoneNumber = telephonyManager.getLine1Number();
 		
 		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 		
@@ -81,9 +84,41 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
 						if(!LocationService.isLoggedIn())
 							return;
 						
-						Intent settingsIntent = new Intent(ProbeMainActivity.this,
-						ProbePreferences.class);
-						startActivity(settingsIntent);
+						final Dialog prefsPinDialog = new Dialog(ProbeMainActivity.this);
+						prefsPinDialog.setContentView(R.layout.pin_dialog);
+						Button okBtn = (Button) prefsPinDialog.findViewById(R.id.pinOk);
+						okBtn.setOnClickListener(new View.OnClickListener() {
+
+						                            @Override
+						                            public void onClick(View v) {
+
+						                            		EditText pinInput = (EditText) prefsPinDialog.findViewById(R.id.pinInput);
+						                            		
+						                            		if(pinInput.getText().toString().equals("2020")) {
+						                            			Intent settingsIntent = new Intent(ProbeMainActivity.this,
+						                        						ProbePreferences.class);
+						                        				startActivity(settingsIntent);
+						                        				
+						                        				prefsPinDialog.dismiss();
+						                            		}
+						                            		else
+						                            			pinInput.setText("");
+						                            }
+						 });
+						Button cancelBtn = (Button) prefsPinDialog.findViewById(R.id.pinCancel);
+						cancelBtn.setOnClickListener(new View.OnClickListener() {
+
+						                            @Override
+						                            public void onClick(View v) {
+
+						                            	prefsPinDialog.dismiss();
+						                            }
+						 });
+						
+						prefsPinDialog.setTitle("Enter PIN to unlock");
+						prefsPinDialog.show();
+						
+						
 						break;
 						
 					case R.id.mailButton:
@@ -109,9 +144,40 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
 						
 					case R.id.changeLoginButton:
 						
-						Intent loginIntent = new Intent(ProbeMainActivity.this,
-						ProbeLoginActivity.class);
-						startActivity(loginIntent);
+						
+						final Dialog loginPinDialog = new Dialog(ProbeMainActivity.this);
+						loginPinDialog.setContentView(R.layout.pin_dialog);
+						Button loginPinOkBtn = (Button) loginPinDialog.findViewById(R.id.pinOk);
+						loginPinOkBtn.setOnClickListener(new View.OnClickListener() {
+
+						                            @Override
+						                            public void onClick(View v) {
+
+						                            		EditText pinInput = (EditText) loginPinDialog.findViewById(R.id.pinInput);
+						                            	
+						                            		if(pinInput.getText().toString().equals("2020")) {
+						                            			Intent loginIntent = new Intent(ProbeMainActivity.this,
+						                            					ProbeLoginActivity.class);
+						                            			startActivity(loginIntent);
+						                            			
+						                            			loginPinDialog.dismiss();
+						                            		}
+						                            		else
+						                            			pinInput.setText("");
+						                            }
+						 });
+						Button loginPinCancelBtn = (Button) loginPinDialog.findViewById(R.id.pinCancel);
+						loginPinCancelBtn.setOnClickListener(new View.OnClickListener() {
+
+						                            @Override
+						                            public void onClick(View v) {
+
+						                            	loginPinDialog.dismiss();
+						                            }
+						 });
+						
+						loginPinDialog.setTitle("Enter PIN to unlock");
+						loginPinDialog.show();
 						break;
 		  
 		 
@@ -154,6 +220,7 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
         setOperator(LocationService.getOperator());
         setNetworkStatus(LocationService.getNetworkStatus());
         setGpsStatus(LocationService.getGpsStatus());
+        setPhoneNumber(LocationService.phoneNumber);
         
         try{
 			
@@ -255,7 +322,11 @@ public class ProbeMainActivity extends Activity implements ILocationServiceClien
 	
 	// activity methods
 
-
+	public void setPhoneNumber(String phoneNumber) {
+		TextView textView = (TextView) findViewById(R.id.phoneNumber);
+		textView.setText(phoneNumber);
+	}
+	
 	public void setGpsStatus(String gpsStatus) {
 		TextView textView = (TextView) findViewById(R.id.gps);
 		textView.setText(gpsStatus);

@@ -147,4 +147,23 @@
         android:layout_alignLeft="@+id/gps"
         android:textColor="#fff" />
 
+    <TextView
+        android:id="@+id/phoneNumber"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/network"
+        android:layout_below="@+id/network"
+        android:text="searching..."
+        android:textColor="#fff" />
+
+    <TextView
+        android:id="@+id/TextView01"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/phoneNumber"
+        android:layout_alignBottom="@+id/phoneNumber"
+        android:layout_alignRight="@+id/networkLabel"
+        android:text="phone number:"
+        android:textColor="#aaa" />
+
 </RelativeLayout>
