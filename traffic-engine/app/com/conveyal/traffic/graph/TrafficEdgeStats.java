@@ -8,9 +8,18 @@ public class TrafficEdgeStats {
 
 	public TrafficEdgeStats(int id) {
 		edgeId = id;
+
+		for(int i = 0; i < 7; i++) {
+			for(int j = 0; j < 24; j++ ) {
+				this.edgeData[i][j] = new EdgeStatsData();
+			}
+		}
 	}
 	
 	public void update(double speed, int day, int hour) {
+		 
+		 if(this.edgeData[day][hour] == null)
+		 	
 		 this.edgeData[day][hour].update(speed);
 	}
 
@@ -18,11 +27,11 @@ public class TrafficEdgeStats {
 		return this.edgeData[day][hour].average();
 	}
 	
-	public void reset(Integer day, Integer hour) {
+	public void reset(int day, int hour) {
 		this.edgeData[day][hour].reset();
 	}
 	
-	public long observationCount(Integer day, Integer hour) {
+	public long observationCount(int day, int hour) {
 		return this.edgeData[day][hour].observationCount();
 	}
 

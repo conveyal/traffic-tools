@@ -74,14 +74,14 @@ public class TrafficEdgeTraversal {
 public String mapEvent() throws JsonGenerationException, IOException {
 	
 		
-		MapEventData med = new MapEventData();
+		/*MapEventData med = new MapEventData();
 		
 		med.message = "Velocity: " + velocity;
 		med.type = "streetEdge";
 		med.geom = parentEdge.getGeometry();
 
 		ObjectMapper mapper = new ObjectMapper();
-		Application.pw.println(mapper.writeValueAsString(med)  + ",");
+		Application.pw.println(mapper.writeValueAsString(med)  + ",");*/
 		return "";
 	
 	}
