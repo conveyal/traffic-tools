@@ -35,7 +35,7 @@ import com.vividsolutions.jts.geom.Coordinate;
 
 public class Application extends Controller {
 	
-	public static PrintWriter pw;
+	//public static PrintWriter pw;
 	
 	public static TrafficGraph graph = TrafficGraph.load(Play.configuration.getProperty("application.otpGraphPath"));
 
@@ -54,8 +54,8 @@ public class Application extends Controller {
 	public static void loadCebu() throws IOException {
 	    
 		
-		 FileWriter outFile = new FileWriter(new File("/tmp/json.out"));
-		  pw = new PrintWriter(outFile);
+		 //FileWriter outFile = new FileWriter(new File("/tmp/json.out"));
+		 //pw = new PrintWriter(outFile);
 		  
 		  
 		 for(Object o : LocationUpdate.em().createNativeQuery("SELECT imei, timestamp, lat, lon from locationupdate WHERE lat < 30 AND (date_part('month', timestamp) = 4) ORDER BY id asc limit 1000").getResultList()){
@@ -80,7 +80,7 @@ public class Application extends Controller {
 			//	}
 			 }
 
-		 pw.close();
+		 //pw.close();
 		 
         ok();
     }
