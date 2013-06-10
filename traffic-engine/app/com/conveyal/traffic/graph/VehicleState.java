@@ -1,7 +1,9 @@
 package com.conveyal.traffic.graph;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -17,6 +19,8 @@ import play.Logger;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.LineString;
+
+import controllers.Application;
 
 import util.GeoUtils;
 import util.ProjectedCoordinate;
@@ -63,7 +67,9 @@ public class VehicleState {
 		synchronized(this) { 
 			
 			try {
-				MapEvent.instance.event.publish(currentObservation.mapEvent());
+				currentObservation.mapEvent();
+				//Application.pw.println( + ",");
+				//MapEvent.instance.event.publish();
 			}
 			catch(Exception e) {
 				e.printStackTrace();
@@ -71,14 +77,16 @@ public class VehicleState {
 			
 			if(lastObservation != null) {
 				
-				if(!lastObservation.before(currentObservation))
+				if(currentObservation.before(lastObservation)) {
+
 					throw new ObservationOutOfOrderException(lastObservation, currentObservation);
+				}
 				
 				purgeCrossings(lastObservation.getTime() - MAX_OBSERVATION_AGE);
 				
 				MovementEdge me = new MovementEdge(lastObservation, currentObservation);
 				
-				// update tl1 crossing list
+				// update tl1 crossing list	
 				List<TripLineCrossing> t1cs = graph.getTraffEdgeIndex().findTl1TrafficEdges(me);
 				
 				for(TripLineCrossing t1crossing : t1cs) {
@@ -89,7 +97,7 @@ public class VehicleState {
 					
 					//t1CrossingTimes.put(t1crossing.getTimeAtCrossing(), t1crossing.getEdgeId());
 					
-					//Logger.info("TL1 crossing for: " + t1crossing.getEdgeId());
+					Logger.info("TL1 crossing for: " + t1crossing.getEdgeId());
 				}
 				
 				// find tl2 crossings
@@ -101,7 +109,7 @@ public class VehicleState {
 				// iterate through tl2 crossings and find edge traversals
 				for(TripLineCrossing t2crossing : t2cs) {
 					
-					//Logger.info("TL2 crossing for: " + t2crossing.getEdgeId());
+					Logger.info("TL2 crossing for: " + t2crossing.getEdgeId());
 					
 					if(t1Crossings.containsKey(t2crossing.getEdgeId())){
 						
@@ -145,6 +153,7 @@ public class VehicleState {
 				
 				
 			}
+		
 			
 			lastObservation = currentObservation;
 		}
@@ -273,8 +282,14 @@ public class VehicleState {
 			if(averageSpeed > 50.0)
 				Logger.warn("Average Speed exceeds 50 m/s");
 			else {
-				graph.updateEdgeSpeed(tet1.getParentEdge().getId(), averageSpeed);
-				graph.updateEdgeSpeed(tet2.getParentEdge().getId(), averageSpeed);
+				Calendar calendar = Calendar.getInstance();
+		        calendar.setTimeInMillis(tet1.getTlc2().getTimeAtCrossing());
+		        
+		        int day = calendar.get(Calendar.DAY_OF_WEEK);
+		        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+		        
+				graph.updateEdgeSpeed(tet1.getParentEdge().getId(), day,  hour, averageSpeed);
+				graph.updateEdgeSpeed(tet2.getParentEdge().getId(), day,  hour, averageSpeed);
 			}
 			
 			

@@ -5,6 +5,8 @@ import java.io.IOException;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import controllers.Application;
+
 import models.MapEvent;
 import play.Logger;
 import util.MapEventData;
@@ -79,8 +81,8 @@ public String mapEvent() throws JsonGenerationException, IOException {
 		med.geom = parentEdge.getGeometry();
 
 		ObjectMapper mapper = new ObjectMapper();
-	
-		return mapper.writeValueAsString(med);
+		Application.pw.println(mapper.writeValueAsString(med)  + ",");
+		return "";
 	
 	}
 }

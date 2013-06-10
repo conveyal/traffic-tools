@@ -238,19 +238,26 @@ public class TrafficGraph {
 		
 	}
 	
-	public void updateEdgeSpeed(Integer id, Double speed) {
+	public void updateEdgeSpeed(Integer id, int day, int hour, Double speed) {
 		if(!trafficStats.containsKey(id))
 			trafficStats.put(id, new TrafficEdgeStats(id));
 		
 		Logger.info("Speed: " + speed);
-		trafficStats.get(id).update(speed);
+		trafficStats.get(id).update(speed, day, hour);
 	}
 	
-	public Double getEdgeSpeed(Integer id) {
+	public Double getEdgeSpeed(Integer id, int day, int hour) {
 		if(!trafficStats.containsKey(id))
 			return null;
 		
-		return trafficStats.get(id).average();
+		return trafficStats.get(id).average(day, hour);
+	}
+	
+	public long getEdgeObservations(Integer id, int day, int hour) {
+		if(!trafficStats.containsKey(id))
+			return 0;
+		
+		return trafficStats.get(id).observationCount(day, hour);
 	}
 	
 	public Set<Integer> getEdgesWithStats() {
@@ -281,7 +288,7 @@ public class TrafficGraph {
 		} 
 		catch (ObservationOutOfOrderException e) {
 			// update out of order, skipping...
-			Logger.warn("Vehicle update out of order.");
+			Logger.warn("Vehicle update out of order: " + e.toString());
 		}
 		
 		if(vehicleUpdateCount % 1000 == 0){

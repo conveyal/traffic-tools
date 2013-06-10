@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.http.client.HttpResponseException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -76,6 +77,7 @@ public class LocationService extends Service {
 	
 	public static String 	DISPLAY_MESSAGE_ACTION	= "com.conveyal.trafficprobe.intent.DISPLAY_MESSAGE_ACTION";
 	public static String 	ALERT_UPDATE_ACTION	= "com.conveyal.trafficprobe.intent.ALERT_UPDATE_ACTION";
+	public static String 	CLEAR_PANIC_ACTION	= "com.conveyal.trafficprobe.intent.ALERT_UPDATE_ACTION";
 	
 	//private static String  	WS_LOCATION_URL			= "ws://192.168.120.145:9001/ws/location";
 	//private static String  	HTTP_LOCATION_URL		= "http://192.168.120.145:9001/api/locationPb";
@@ -88,6 +90,7 @@ public class LocationService extends Service {
 	private static Boolean 	registering		= false;
 
 	public static String 	imei 			= null;
+	public static String 	phoneNumber 			= null;
 	public static Long 		phoneId			= null;
 	
 	public static String 	appVersion 		= "";
@@ -98,6 +101,10 @@ public class LocationService extends Service {
     
     private static String 	gpsStatus 		= "searching...";
     private static String 	networkStatus 	= "connecting...";
+    
+    
+    public static Boolean  showOverlay = true;
+    public static Boolean  panic = false;
     
     
     public static ArrayList<Operator> operatorList = new ArrayList<Operator>();    
@@ -302,7 +309,9 @@ public class LocationService extends Service {
         {
         	TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
     		LocationService.imei = telephonyManager.getDeviceId();
+    		LocationService.phoneNumber = telephonyManager.getLine1Number();
         }
+       
         
         doAuthenticate();
 		
@@ -324,8 +333,7 @@ public class LocationService extends Service {
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
     
 
-        notification.setLatestEventInfo(getApplicationContext(), "TrafficProbe",
-                "", pending);
+        notification.setLatestEventInfo(getApplicationContext(), "TrafficProbe", "", pending);
 
         gpsNotificationManager.notify(NOTIFICATION_ID, notification);
    
@@ -509,9 +517,16 @@ public class LocationService extends Service {
 		    
 		    public void onFailure(Throwable error, String content) {
 		    	
-		    	Log.i("LocationService", "doAuthenticate authenticated failed: "  + error.getMessage() + " -- " + content);		   
+		    	if(error instanceof HttpResponseException && ((HttpResponseException)error).getStatusCode() == 401) {
 		    	
-		    	doRegisterPrompt();
+		    		Log.i("LocationService", "doAuthenticate authenticated failed: "  + error.getMessage() + " -- " + content);		   
+		    	
+		    		doRegisterPrompt();
+		    	}
+		    	else {
+		    		    // network failure
+						doAuthenticate();
+		    	}
 		    	loggedIn = false;
 		    }
 		});	
@@ -623,6 +638,10 @@ public class LocationService extends Service {
 	    	RequestParams params = new RequestParams();
 	    	
 	    	params.put("imei", LocationService.imei);
+	    	
+	    	if(LocationService.phoneNumber != null)
+	    		params.put("phoneNumber", LocationService.phoneNumber);
+	    	
 	    	params.put("operator", operatorId.toString());
 	    	
 			AsyncHttpClient client = new AsyncHttpClient();

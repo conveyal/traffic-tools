@@ -34,6 +34,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -52,18 +54,23 @@ public class MapActivity extends Activity {
 	private MapView mapView;
 	private DefaultResourceProxyImpl resourceProxy;
 	private	RelativeLayout mapContainer;
-	private boolean showOverlay = false;
 	
 	private BroadcastReceiver messageReceiver = new BroadcastReceiver() {
-		  @Override
-		  public void onReceive(Context context, Intent intent) {
-			  
-		    if(intent != null && intent.getAction().equals(LocationService.ALERT_UPDATE_ACTION)) {
-		    	updateAlertOverlay();
-		    }
-		    
-		  }
-		};
+	  @Override
+	  public void onReceive(Context context, Intent intent) {
+		  
+	    if(intent != null && intent.getAction().equals(LocationService.ALERT_UPDATE_ACTION)) {
+	    	updateAlertOverlay();
+	    }
+	    
+	    if(intent != null && intent.getAction().equals(LocationService.CLEAR_PANIC_ACTION)) {
+	    	LocationService.panic = false;
+	    	updatePanic();
+	    }
+
+	    
+	  }
+	};
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -121,7 +128,8 @@ public class MapActivity extends Activity {
 		mapView.setBuiltInZoomControls(true);
 		mapView.setMultiTouchControls(true);
 	    
-		mapView.getController().setZoom(16);
+		mapView.getController().setCenter(new GeoPoint(10.3021258, 123.89616));
+		mapView.getController().setZoom(15);
 	    
 	    locOverlay = new MyLocationOverlay(this, mapView);
 	    locOverlay.enableMyLocation();
@@ -130,13 +138,30 @@ public class MapActivity extends Activity {
 	    mapView.getOverlays().add(locOverlay);
 	    
         locOverlay.runOnFirstFix(new Runnable() {
-			 public void run() {
-				 mapView.getController().setCenter(locOverlay.getMyLocation());
-			 } 
+		 public void run() {
+			 mapView.getController().setCenter(locOverlay.getMyLocation());
+		 } 
         });
         
         LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver,
       	      new IntentFilter(LocationService.ALERT_UPDATE_ACTION));
+        
+        LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver,
+        	      new IntentFilter(LocationService.ALERT_UPDATE_ACTION));
+        
+        View.OnLongClickListener listener = new View.OnLongClickListener() { 
+            @Override
+            public boolean onLongClick(View v) {
+                togglePanic(v);
+                return true;
+            }
+        };
+        
+        ImageButton panicButton = (ImageButton) findViewById(R.id.panicButton);
+		panicButton.setOnLongClickListener(listener);
+        
+        updateOverlay();
+        updatePanic();
         
 	}
 	
@@ -150,16 +175,28 @@ public class MapActivity extends Activity {
 		Log.i("MapActivity", "onDestroy");	
 	}
 	
-	public void toggleOverlay(View v)
+	public void toggleOverlay(View v) {
+		
+		if(!LocationService.showOverlay) {
+			LocationService.showOverlay = true;
+		}
+		else {
+			LocationService.showOverlay = false;
+		}
+		
+		updateOverlay();
+	}
+	
+	
+	public void updateOverlay()
 	{
 		ImageView toggleButtonView = (ImageView)findViewById(R.id.toggleOverlay);
 		
 		Log.i("MapActivity", "toggleOverlay");
 		
-		if(showOverlay)
+		if(!LocationService.showOverlay)
 		{
 			toggleButtonView.setImageResource(R.drawable.pushpin);
-			showOverlay = false;
 			
 			if(alertOverlay != null && mapView.getOverlays().contains(alertOverlay)) {
 				mapView.getOverlays().remove(alertOverlay);
@@ -170,11 +207,61 @@ public class MapActivity extends Activity {
 		else
 		{
 			toggleButtonView.setImageResource(R.drawable.pushpin_blue);
-			showOverlay = true;
 			
 			updateAlertOverlay();
 		}
 	}
+	
+	public void togglePanic(View v) {
+		
+		if(!LocationService.panic) {
+			LocationService.panic = true;
+		}
+		else {
+			LocationService.panic = false;
+		}
+		
+		updatePanic();
+	}
+	
+	public void updatePanic()
+	{
+		ImageView toggleButtonView = (ImageView)findViewById(R.id.panicButton);
+		
+		Log.i("MapActivity", "togglePanic");
+		
+		
+	 	RequestParams params = new RequestParams();
+		params.put("panic", LocationService.panic.toString());
+    	params.put("imei", LocationService.imei);
+    	
+		AsyncHttpClient client = new AsyncHttpClient();
+		client.setUserAgent("tp" + LocationService.appVersion);
+		client.post(LocationService.URL_BASE + "api/panic", params,  new JsonHttpResponseHandler() {
+		    @Override
+		    
+		    public void onSuccess(String content) {
+		    	
+		    	//
+		    }
+		    
+		    public void onFailure(Throwable error, String content) {
+		    	//
+		    }
+		});	
+		
+		if(LocationService.panic)
+		{
+			toggleButtonView.setImageResource(R.drawable.panic);
+			
+			
+		}
+		else
+		{
+			toggleButtonView.setImageResource(R.drawable.panic_gray);
+		}
+	}
+	
 	
 	public void centerView(View v)
 	{
@@ -183,7 +270,7 @@ public class MapActivity extends Activity {
 	
 	private void updateAlertOverlay() {
 	
-		if(showOverlay) {
+		if(LocationService.showOverlay) {
 			
 			RequestParams params = new RequestParams();
 			
@@ -196,7 +283,7 @@ public class MapActivity extends Activity {
 			    
 			    public void onSuccess(JSONArray response) {
 			    	
-			    	if(!showOverlay)
+			    	if(!LocationService.showOverlay)
 			    		return;
 			    	
 			    	if(alertOverlay != null && mapView.getOverlays().contains(alertOverlay)) {
