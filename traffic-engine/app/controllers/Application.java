@@ -56,8 +56,8 @@ public class Application extends Controller {
 		 //FileWriter outFile = new FileWriter(new File("/tmp/json.out"));
 		 //pw = new PrintWriter(outFile);
 		  
-		  
-		 for(Object o : LocationUpdate.em().createNativeQuery("SELECT imei, timestamp, lat, lon from locationupdate WHERE lat < 30 AND (date_part('month', timestamp) = 4) ORDER BY id asc limit 1000").getResultList()){
+		
+		 for(Object o : LocationUpdate.em().createNativeQuery("SELECT imei, timestamp, lat, lon from locationupdate WHERE lat < 30 AND (date_part('month', timestamp) = 4) ORDER BY id asc limit 100000").getResultList()){
 				 String imei = (String)((Object[])o)[0];
 				 Date time = (Date)((Object[])o)[1];
 				 Double lat = (Double)((Object[])o)[2];

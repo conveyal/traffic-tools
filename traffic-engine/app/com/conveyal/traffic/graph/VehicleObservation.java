@@ -29,7 +29,7 @@ public class VehicleObservation {
 		position = p;
 		positionTime = pT;
 		
-		Logger.info(id + " - " + pT);
+		//Logger.info(id + " - " + pT);
 		
 	}
 	
