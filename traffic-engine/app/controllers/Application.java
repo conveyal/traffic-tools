@@ -35,7 +35,7 @@ import com.vividsolutions.jts.geom.Coordinate;
 
 public class Application extends Controller {
 	
-	//public static PrintWriter pw;
+	public static PrintWriter pw;
 	
 	public static TrafficGraph graph = TrafficGraph.load(Play.configuration.getProperty("application.otpGraphPath"));
 
