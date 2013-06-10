@@ -64,7 +64,12 @@ public class Application extends Controller {
 				 Double lon = (Double)((Object[])o)[3];
 				
 				 Long vehicleId = graph.getVehicleId(imei);
-				 
+				
+
+				if(lat == null || lon == null)
+                                                continue;
+
+ 
 				 VehicleObservation vo = new VehicleObservation(vehicleId, time.getTime(), GeoUtils.convertLatLonToEuclidean(new Coordinate(lat, lon)));
 				
 				
