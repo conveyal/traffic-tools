@@ -57,9 +57,11 @@ public class Application extends Controller {
 					 Date time = (Date)((Object[])o)[1];
 					 Double lat = (Double)((Object[])o)[2];
 					 Double lon = (Double)((Object[])o)[3];
-					
+				
+					 if(lat == null || lon == null)					
+						continue;
+							 
 					 Long vehicleId = graph.getVehicleId(imei);
-					 
 					 VehicleObservation vo = new VehicleObservation(vehicleId, time.getTime(), GeoUtils.convertLatLonToEuclidean(new Coordinate(lat, lon)));
 					
 					 graph.updateVehicle(vehicleId, vo);
