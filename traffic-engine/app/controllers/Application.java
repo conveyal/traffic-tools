@@ -58,7 +58,7 @@ public class Application extends Controller {
 		  pw = new PrintWriter(outFile);
 		  
 		  
-		 for(Object o : LocationUpdate.em().createNativeQuery("SELECT imei, timestamp, lat, lon from locationupdate WHERE lat < 30 AND (date_part('hour', timestamp) > 8 AND date_part('hour', timestamp) < 20) ORDER BY id asc limit 1000000").getResultList()){
+		 for(Object o : LocationUpdate.em().createNativeQuery("SELECT imei, timestamp, lat, lon from locationupdate WHERE lat < 30 AND (date_part('month', timestamp) = 4) ORDER BY id asc limit 1000").getResultList()){
 				 String imei = (String)((Object[])o)[0];
 				 Date time = (Date)((Object[])o)[1];
 				 Double lat = (Double)((Object[])o)[2];
@@ -107,7 +107,12 @@ public class Application extends Controller {
 	public static void saveCebuStats() {
 		    
 		for(Integer edge : graph.getEdgesWithStats()) {
-			StatsEdge.nativeInsert(edge, graph.getEdgeSpeed(edge), graph.getTrafficEdge(edge).getGeometry(),  graph.getEdgeObservations(edge));
+			for(int i = 0; i < 7; i++) {
+				for(int j = 0; j < 24; j++ ) {
+					if(graph.getEdgeObservations(edge, i, j) > 0)
+						StatsEdge.nativeInsert(edge, i, j, graph.getEdgeSpeed(edge, i, j), graph.getTrafficEdge(edge).getGeometry(),  graph.getEdgeObservations(edge, i, j));
+				}
+			}
 		}
     	
         ok();
