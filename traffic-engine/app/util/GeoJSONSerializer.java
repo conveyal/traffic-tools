@@ -58,6 +58,8 @@ public class GeoJSONSerializer extends JsonSerializer<MapEventData> {
     jgen.writeFieldName("geom");
     jgen.writeString(json.toString(value.geom));
     jgen.writeEndObject();
+    
+    
 
   }
 }

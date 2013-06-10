@@ -1,26 +1,49 @@
-#{extends 'main.html' /}
+<!DOCTYPE html>
+<html lang="en">
+<head>
 
-#{set page:'index' /}
+	<link rel="stylesheet" href="leaflet.css" />
 
-<div class="row-fluid" style="background-color: #fff;  position: relative;">
 
+    
+   <style type="text/css">
+      body {
+        padding: 0px;
+        background-color: #fff;	
+      }
+      
+      #content 
+      {
+      	padding: 0px;
+      	margin-top: 40px;
+      }
+      
+      #map
+      {
+      	width: 100%;
+      }
+    
+    </style>
+
+  
+    <title>Cebu Traffic</title>
+
+	<script>
+	
+		var geoJsonOverlay;
+		var defaultLatLon = [38.8900, -77.0300];
+	
+	</script>
+
+</head>
+
+<body>
 
 <div id="map"></div>
 
-<div style="position: absolute; top:10px; right:10px; width:150px;">
-		<div class="well well-small">
-		
-		<strong>Simulation</strong> <!-- <a href="#" style="float: right;">Generate Report</a>  -->
-
-			<button class="primary" id="runSimulation" onclick="runSimulation();">Simulation</button>
-			<button id="clearSimulation"  onclick="clearSimulation();">clear</button>
-			
-
-		</div>
-</div>
-</div>
-		
-<script src="@{'/public/javascripts/simulator/simulator.js'}"></script>
+<script src="jquery.js"></script>
+<script src="leaflet.js"></script>
+<script src="simulator.js"></script>
 
 
  
@@ -29,7 +52,6 @@
 
     // Create a socket
 
-    var socket = new WebSocket('ws://localhost:9000/ws/map')
 
  var simulatedPathStyle = {
     "color": "#ff7800",
@@ -55,44 +77,58 @@ function bindPopup(feature, layer) {
 
 
     // Message received on the socket
+function loadData() {
 
-    socket.onmessage = function(event) {
+	$.ajax({dataType: 'json' ,
+	   url: '/public/dc.json',
+		success: function(data){
+       
+ 
 
-        var data = JSON.parse(event.data);
-        var geoJson = JSON.parse(data.geom);
+        var records = JSON.parse(data);
         
-      	if(data.type == "VehicleObservation") {
-      	
-      		var gj = L.geoJson(geoJson, { style: function (feature) {return {color: "#00f"}; }, pointToLayer : function (featureData, latlng) {
-      			return L.circleMarker(latlng, {radius: 4});
-      		}});
-      		
-      		geoJsonOverlay.addLayer(gj);
-      	}
-      	
-      	if(data.type == "simulatePath") {
-      	
-      		var gj =L.geoJson(geoJson, {style: simulatedPathStyle});
-      		
-      		geoJsonOverlay.addLayer(gj);
-      	}
-      	
-      	if(data.type == "tripLine") {
-      	
-      		var gj =L.geoJson(geoJson, {style: tripLinePathStyle});
-      		
-      		geoJsonOverlay.addLayer(gj);
-      	}
-      	
-      	if(data.type == "streetEdge") {
-      	
-      		geoJson.properties = {description: data.message};
-      		var gj = L.geoJson(geoJson, {style: streetEdgePathStyle, onEachFeature: bindPopup});
-      		
-      		geoJsonOverlay.addLayer(gj);
-      	
-      	}
-    }
+        for(i in records)
+        {
+	        var geoJson = JSON.parse(records[i].geom);
+	        
+	      	if(records[i].type == "VehicleObservation") {
+	      	
+	      		var gj = L.geoJson(geoJson, { style: function (feature) {return {color: "#00f"}; }, pointToLayer : function (featureData, latlng) {
+	      			return L.circleMarker(latlng, {radius: 4});
+	      		}});
+	      		
+	      		geoJsonOverlay.addLayer(gj);
+	      	}
+	      	
+	      	if(records[i].type == "simulatePath") {
+	      	
+	      		var gj =L.geoJson(geoJson, {style: simulatedPathStyle});
+	      		
+	      		geoJsonOverlay.addLayer(gj);
+	      	}
+	      	
+	      	if(records[i].type == "tripLine") {
+	      	
+	      		var gj =L.geoJson(geoJson, {style: tripLinePathStyle});
+	      		
+	      		geoJsonOverlay.addLayer(gj);
+	      	}
+	      	
+	      	if(records[i].type == "streetEdge") {
+	      	
+	      		geoJson.properties = {description: records[i].message};
+	      		var gj = L.geoJson(geoJson, {style: streetEdgePathStyle, onEachFeature: bindPopup});
+	      		
+	      		geoJsonOverlay.addLayer(gj);
+	      	
+	      	}
+	    }
+    }); 
+  }
 
 </script>
 
+  
+</body>
+    
+</html>

@@ -27,9 +27,11 @@ public class StatsEdge extends Model {
     
     public Long edgeId;
     
+    public Long observationCount;
+    
     public Double speed;
     
-    public static void nativeInsert(Integer edgeId, Double speed, LineString edge)
+    public static void nativeInsert(Integer edgeId, Double speed, LineString edge, Long observationCount)
     {
     	List<String> edgePoints = new ArrayList<String>();
 
@@ -42,12 +44,13 @@ public class StatsEdge extends Model {
 	    Query idQuery = GraphEdge.em().createNativeQuery("SELECT NEXTVAL('hibernate_sequence');");
     	BigInteger nextId = (BigInteger)idQuery.getSingleResult();
 
-    	GraphEdge.em().createNativeQuery("INSERT INTO statsedge (id, edgeid, shape, speed)" +
-        	"  VALUES(?, ?, ST_GeomFromText( ?, 4326), ?);")
+    	GraphEdge.em().createNativeQuery("INSERT INTO statsedge (id, edgeid, shape, speed, observationcount)" +
+        	"  VALUES(?, ?, ST_GeomFromText( ?, 4326), ?, ?);")
           .setParameter(1,  nextId)
           .setParameter(2,  edgeId)	            
           .setParameter(3,  edgeLinestring)
           .setParameter(4,  speed)
+          .setParameter(5,  observationCount)
           .executeUpdate();
     	
     }
