@@ -114,7 +114,7 @@ public class Application extends Controller {
 			for(int i = 0; i < 7; i++) {
 				for(int j = 0; j < 24; j++ ) {
 					if(graph.getEdgeObservations(edge, i, j) > 0)
-						StatsEdge.nativeInsert(edge, i, j, graph.getEdgeSpeed(edge, i, j), graph.getTrafficEdge(edge).getGeometry(),  graph.getEdgeObservations(edge, i, j));
+						StatsEdge.nativeInsert(edge, i, j, graph.getEdgeSpeed(edge, i, j), graph.getTrafficEdge(edge).getGeometry(),  graph.getEdgeObservations(edge, i, j),  graph.getEdgeSpeedTotal(edge, i, j));
 				}
 			}
 		}

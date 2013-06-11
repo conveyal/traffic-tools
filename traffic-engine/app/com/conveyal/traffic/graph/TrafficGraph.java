@@ -157,7 +157,7 @@ public class TrafficGraph {
 	
 	public static void build(TrafficGraph g) {
 	
-		// rebuild misisng map
+		// rebuild missing map
 		
 		g.trafficEdgeMap = new HashMap<Integer, TrafficEdge>();
 		
@@ -251,6 +251,13 @@ public class TrafficGraph {
 			return null;
 		
 		return trafficStats.get(id).average(day, hour);
+	}
+	
+	public Double getEdgeSpeedTotal(Integer id, int day, int hour) {
+		if(!trafficStats.containsKey(id))
+			return null;
+		
+		return trafficStats.get(id).total(day, hour);
 	}
 	
 	public long getEdgeObservations(Integer id, int day, int hour) {

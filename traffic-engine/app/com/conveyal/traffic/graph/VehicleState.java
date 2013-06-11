@@ -97,7 +97,7 @@ public class VehicleState {
 					
 					//t1CrossingTimes.put(t1crossing.getTimeAtCrossing(), t1crossing.getEdgeId());
 					
-					Logger.info("TL1 crossing for: " + t1crossing.getEdgeId());
+					//Logger.info("TL1 crossing for: " + t1crossing.getEdgeId());
 				}
 				
 				// find tl2 crossings
@@ -109,7 +109,7 @@ public class VehicleState {
 				// iterate through tl2 crossings and find edge traversals
 				for(TripLineCrossing t2crossing : t2cs) {
 					
-					Logger.info("TL2 crossing for: " + t2crossing.getEdgeId());
+					//Logger.info("TL2 crossing for: " + t2crossing.getEdgeId());
 					
 					if(t1Crossings.containsKey(t2crossing.getEdgeId())){
 						

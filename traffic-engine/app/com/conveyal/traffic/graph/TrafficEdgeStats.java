@@ -16,15 +16,16 @@ public class TrafficEdgeStats {
 		}
 	}
 	
-	public void update(double speed, int day, int hour) {
-		 
-		 if(this.edgeData[day][hour] == null)
-		 	
+	public void update(double speed, int day, int hour) { 	
 		 this.edgeData[day][hour].update(speed);
 	}
 
 	public double average(int day, int hour) {
 		return this.edgeData[day][hour].average();
+	}
+	
+	public double total(int day, int hour) {
+		return this.edgeData[day][hour].speedTotal;
 	}
 	
 	public void reset(int day, int hour) {
