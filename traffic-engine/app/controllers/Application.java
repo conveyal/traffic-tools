@@ -72,7 +72,7 @@ public class Application extends Controller {
 			String[] lineParts = line.split(",");
 
 		    String imei = lineParts[0].trim();
-			Date time = new Date(Long.parseLong(lineParts[1].trim()));
+			Date time = new Date(Math.round(Double.parseDouble(lineParts[1].trim())));
 			Double lat = Double.parseDouble(lineParts[2].trim());
 			Double lon = Double.parseDouble(lineParts[3].trim());
 
