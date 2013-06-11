@@ -9,7 +9,7 @@ public class TrafficEdgeStats {
 	public TrafficEdgeStats(int id) {
 		edgeId = id;
 
-		for(int i = 0; i < 7; i++) {
+		for(int i = 1; i < 8; i++) {
 			for(int j = 0; j < 24; j++ ) {
 				this.edgeData[i][j] = new EdgeStatsData();
 			}

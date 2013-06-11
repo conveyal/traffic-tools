@@ -7,7 +7,9 @@ import util.MapEventData;
 import util.ProjectedCoordinate;
 
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -56,38 +58,39 @@ public class Application extends Controller {
 		 //FileWriter outFile = new FileWriter(new File("/tmp/json.out"));
 		 //pw = new PrintWriter(outFile);
 		 
-		 for(int offset = 0; offset <= 2000000; offset += 100000){
+		 //for(int offset = 0; offset <= 2000000; offset += 10000){
 			
-			 Logger.info("load offset: " + offset);
+			 //Logger.info("load offset: " + offset);
 
-			 for(Object o : LocationUpdate.em().createNativeQuery("SELECT imei, timestamp, lat, lon from locationupdate WHERE lat < 30 AND (date_part('month', timestamp) = 4) ORDER BY id asc LIMIT 100000 OFFSET " + offset).getResultList()){
-					 String imei = (String)((Object[])o)[0];
-					 Date time = (Date)((Object[])o)[1];
-					 Double lat = (Double)((Object[])o)[2];
-					 Double lon = (Double)((Object[])o)[3];
-					
-					 Long vehicleId = graph.getVehicleId(imei);
-					
+			 //for(Object o : LocationUpdate.em().createNativeQuery("SELECT imei, timestamp, lat, lon from locationupdate WHERE lat < 30 AND (date_part('month', timestamp) = 4) ORDER BY id asc LIMIT 10000 OFFSET " + offset).getResultList()){
+		
+		BufferedReader br = new BufferedReader(new FileReader(new File("/mnt/cebu.csv")));
+		String line;
 
-					if(lat == null || lon == null)
-	                                                continue;
+		while ((line = br.readLine()) != null) {
 
-	 
-					 VehicleObservation vo = new VehicleObservation(vehicleId, time.getTime(), GeoUtils.convertLatLonToEuclidean(new Coordinate(lat, lon)));
-					
-					
-					 graph.updateVehicle(vehicleId, vo);
-					 
-					 
-					 //try {
-						//Thread.sleep(50);
-					//} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-				//		e.printStackTrace();
-				//	}
-			 }
+			String[] lineParts = line.split(",");
 
+		    String imei = lineParts[0].trim();
+			Date time = new Date(Long.parseLong(lineParts[1].trim()));
+			Double lat = Double.parseDouble(lineParts[2].trim());
+			Double lon = Double.parseDouble(lineParts[3].trim());
+
+			Long vehicleId = graph.getVehicleId(imei);
+
+
+			if(lat == null || lon == null)
+				continue;
+
+			VehicleObservation vo = new VehicleObservation(vehicleId, time.getTime(), GeoUtils.convertLatLonToEuclidean(new Coordinate(lat, lon)));
+
+
+			graph.updateVehicle(vehicleId, vo);
 		}
+
+		br.close();
+
+					
 
 		 //pw.close();
 		 
@@ -116,7 +119,7 @@ public class Application extends Controller {
 	public static void saveCebuStats() {
 		    
 		for(Integer edge : graph.getEdgesWithStats()) {
-			for(int i = 0; i < 7; i++) {
+			for(int i = 1; i < 8; i++) {
 				for(int j = 0; j < 24; j++ ) {
 					if(graph.getEdgeObservations(edge, i, j) > 0)
 						StatsEdge.nativeInsert(edge, i, j, graph.getEdgeSpeed(edge, i, j), graph.getTrafficEdge(edge).getGeometry(),  graph.getEdgeObservations(edge, i, j),  graph.getEdgeSpeedTotal(edge, i, j));
