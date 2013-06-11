@@ -4,7 +4,7 @@ public class TrafficEdgeStats {
 	
 	public final int edgeId;
 
-	private EdgeStatsData[][] edgeData = new EdgeStatsData[7][24];
+	private EdgeStatsData[][] edgeData = new EdgeStatsData[8][24];
 
 	public TrafficEdgeStats(int id) {
 		edgeId = id;
