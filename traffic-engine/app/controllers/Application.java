@@ -56,11 +56,11 @@ public class Application extends Controller {
 		 //FileWriter outFile = new FileWriter(new File("/tmp/json.out"));
 		 //pw = new PrintWriter(outFile);
 		 
-		 for(int offset = 0; offset <= 200000; offset += 100000){
+		 for(int offset = 0; offset <= 2000000; offset += 100000){
 			
 			 Logger.info("load offset: " + offset);
 
-			 for(Object o : LocationUpdate.em().createNativeQuery("SELECT imei, timestamp, lat, lon from locationupdate WHERE lat < 30 AND (date_part('month', timestamp) = 4) ORDER BY id asc LIMIIT 100000 OFFSET " + offset).getResultList()){
+			 for(Object o : LocationUpdate.em().createNativeQuery("SELECT imei, timestamp, lat, lon from locationupdate WHERE lat < 30 AND (date_part('month', timestamp) = 4) ORDER BY id asc LIMIT 100000 OFFSET " + offset).getResultList()){
 					 String imei = (String)((Object[])o)[0];
 					 Date time = (Date)((Object[])o)[1];
 					 Double lat = (Double)((Object[])o)[2];
