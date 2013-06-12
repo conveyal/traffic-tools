@@ -67,12 +67,37 @@ public class Application extends Controller {
 		BufferedReader br = new BufferedReader(new FileReader(new File("/mnt/cebu.csv")));
 		String line;
 
+		HashMap<String, Double> timeCorrection = new HashMap<String, Double>();
+		HashMap<String, Double> lastTime = new HashMap<String, Double>();
+
+
 		while ((line = br.readLine()) != null) {
 
 			String[] lineParts = line.split(",");
 
 		    String imei = lineParts[0].trim();
-			Date time = new Date(Math.round(Double.parseDouble(lineParts[1].trim())));
+
+		    if(!lastTime.contains(imei)) {
+		    	lastTime.put(imei, 0.0);
+		    	timeCorrection.put(imei, 0.0);
+		    }
+		    
+		    Double ms = Double.parseDouble(lineParts[1].trim());
+
+		    if(lastTime.get(imei).equals(ms)) {
+		    	Double tc = timeCorrection.get(imei);
+		    	tc += 5.0;
+		    	ms += tc;
+		    	timeCorrection.put(imei, tc);
+		    }
+		    else {
+		    	timeCorrection.put(imei, 0.0);
+		    	lastTime.put(imei, ms);
+		    }
+
+			Date time = new Date(Math.round(ms));
+
+
 			Double lat = Double.parseDouble(lineParts[2].trim());
 			Double lon = Double.parseDouble(lineParts[3].trim());
 
