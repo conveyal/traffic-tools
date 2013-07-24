@@ -1,6 +1,6 @@
 
 
-var mbUrl = 'http://{s}.tiles.mapbox.com/v3/openplans.map-ky03eiac/{z}/{x}/{y}.png';
+var mbUrl = 'http://{s}.tiles.mapbox.com/v3/conveyal.map-jc4m5i21/{z}/{x}/{y}.png';
 
 var overlayUrl = 'http://{s}.tiles.mapbox.com/v3/conveyal.map-p0tdb7j3/{z}/{x}/{y}.png';
 

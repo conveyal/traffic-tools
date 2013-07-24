@@ -1,7 +1,7 @@
 
 var startLatLng = new L.LatLng(10.3181373, 123.8956844); 
 
-var mbUrl = 'http://{s}.tiles.mapbox.com/v3/openplans.map-g4j0dszr/{z}/{x}/{y}.png';
+var mbUrl = 'http://{s}.tiles.mapbox.com/v3/conveyal.map-jc4m5i21/{z}/{x}/{y}.png';
 
 var cLayers = new Array();
 

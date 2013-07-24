@@ -180,7 +180,7 @@ var TaxiMapView = Backbone.View.extend({
   		});
 
      // Base layer config is optional, default to Mapbox Streets
-      var url = 'http://{s}.tiles.mapbox.com/v3/openplans.map-ky03eiac/{z}/{x}/{y}.png';
+      var url = 'http://{s}.tiles.mapbox.com/v3/conveyal.map-jc4m5i21/{z}/{x}/{y}.png';
           baseLayer = L.tileLayer(url, {
             attribution: '&copy; OpenStreetMap contributors, CC-BY-SA. <a href="http://mapbox.com/about/maps" target="_blank">Terms &amp; Feedback</a>' 
           });
