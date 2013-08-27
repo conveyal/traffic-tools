@@ -96,7 +96,7 @@ public class Citom extends Controller {
 		render();
 	}
 	
-	public static void saveJourney(String name, Double originLat, Double originLon, Double destinationLat, Double destinationLon, Double speed, Double distance, Double time) {
+	public static void saveJourney(String name, Double originLat, Double originLon, Double destinationLat, Double destinationLon, Double speed, Double distance, Double time, String path) {
 		
 		Journey journey = new Journey();
 		
@@ -108,6 +108,7 @@ public class Citom extends Controller {
 		journey.speed = speed;
 		journey.distance = distance;
 		journey.time = time;
+		journey.path = path;
 	
 		journey.account = Security.getAccount();
 		
@@ -169,22 +170,8 @@ public class Citom extends Controller {
 
 		try
 		{
-			if(active != null && active) {
-				from = DateUtils.parseDisplay(fromDate + " 00:00:01");
-				to = DateUtils.parseDisplay(toDate + " 23:59:59");
-			}
-			else {
-				Calendar date = new GregorianCalendar();
-				// reset hour, minutes, seconds and millis
-				date.set(Calendar.HOUR_OF_DAY, 0);
-				date.set(Calendar.MINUTE, 0);
-				date.set(Calendar.SECOND, 0);
-				date.set(Calendar.MILLISECOND, 0);
-
-				// next day
-				date.add(Calendar.DAY_OF_MONTH, 1);
-				to = date.getTime();
-			}
+			from = DateUtils.parseDisplay(fromDate + " 00:00:01");
+			to = DateUtils.parseDisplay(toDate + " 23:59:59");
 		}
 		catch(Exception e)
 		{
@@ -217,19 +204,19 @@ public class Citom extends Controller {
 				query = "%" +  query.toLowerCase() + "%";
 
 				if(type != null && !type.isEmpty())
-					alerts = Alert.find("(lower(description) like ? or lower(publicdescription) like ? or lower(title) like ?) or (activeFrom >= ? and (activeTo <= ? or activeTo is null)) and type = ?", query, query, query, from, to, type).fetch();
+					alerts = Alert.find("(lower(description) like ? or lower(publicdescription) like ? or lower(title) like ?) and (activeFrom >= ? and (activeTo <= ? or activeTo is null)) and type = ?", query, query, query, from, to, type).fetch();
 				else
-					alerts = Alert.find("(lower(description) like ? or lower(publicdescription) like ? or lower(title) like ?) orctiveFrom >= ? and (activeTo <= ? or activeTo is null)) ", query, query, query, from, to).fetch();
+					alerts = Alert.find("(lower(description) like ? or lower(publicdescription) like ? or lower(title) like ?) and (activeFrom >= ? and (activeTo <= ? or activeTo is null)) ", query, query, query, from, to).fetch();
 			}
 			else
 			{
 				if(type != null && !type.isEmpty()) 
-					alerts = Alert.find("((activeFrom >= ? and activeFrom <= ?) or (activeTo <= ? and activeTo >= ?) or  (activeFrom <= ? and activeTo is null)) and type = ?", from, to, to, from, from, type).fetch();
+					alerts = Alert.find("activeFrom >= ? and  (activeTo <= ? or activeTo is null) and type = ?", from, to, type).fetch();
 				else
-					alerts = Alert.find("((activeFrom >= ? and activeFrom <= ?) or (activeTo <= ? and activeTo >= ?) or (activeFrom <= ? and activeTo is null)) ", from, to, to, from, from).fetch();
+					alerts = Alert.find("activeFrom >= ? and  (activeTo <= ? or activeTo is null) ", from, to).fetch();
 			}
 		}
-		
+
 		ArrayList<AlertSimple> data = new ArrayList<AlertSimple>();
 
 		for(Alert alert : alerts)

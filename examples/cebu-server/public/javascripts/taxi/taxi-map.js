@@ -14,7 +14,7 @@ function sizeContent() {
 
 $(document).ready(function() {
   
-	taxiMap = new TaxiMapView({updateFrequency: 2000});
+	taxiMap = new TaxiMapView({updateFrequency: 10000});
 
 	$('#showActive').on('click', function (e) {
     	taxiMap.showActive();

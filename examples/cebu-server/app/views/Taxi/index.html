@@ -13,7 +13,8 @@
 		<div class="row-fluid">
 		
 			<div class="row-fluid">
-				{{#if panic}}<img src="/public/images/crime.png"/>{{else}}<img src="/public/images/taxi.png"/>{{/if}}&nbsp;<strong>{{ vehicle }} -- {{ driver }}</strong> {{#panic}}<button id="clearPanic" type="button" value="all" class="btn btn-mini">Clear Panic</button>{{/panic}}				
+				{{#if panic}}<img src="/public/images/crime.png"/>{{else}}<img src="/public/images/taxi.png"/>{{/if}}&nbsp;<strong>{{ vehicle }} -- {{ driver }}</strong> {{#panic}}<button id="clearPanic" type="button" value="all" class="btn btn-mini">Clear Panic</button>{{/panic}}<br/>
+				{{#if phoneNumber}}<strong>+{{phoneNumber}}</strong>{{/if}}				
 			</div>
 
 			{{#if messages }}

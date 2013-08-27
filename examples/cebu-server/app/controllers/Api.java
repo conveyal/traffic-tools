@@ -280,7 +280,7 @@ public class Api extends Controller {
 			
 	}
 	
-	public static void register(String imei, Long operator)
+	public static void register(String imei, String phoneNumber, Long operator)
 	{
 		if(imei != null && !imei.isEmpty() && operator != null)
 		{
@@ -294,7 +294,7 @@ public class Api extends Controller {
 				Operator operatorObj = Operator.findById(new Long(1));			
 				phone.operator = operatorObj;
 				phone.imei = imei;
-				
+				phone.phoneNumber = phoneNumber;				
 	
 
 			}
@@ -701,7 +701,7 @@ public class Api extends Controller {
     	renderJSON(gson.toJson(updates));
     }
     
-   public static void path(String lat1, String lon1, String lat2, String lon2)
+   public static void path(String lat1, String lon1, String lat2, String lon2, String hours, String days)
     		throws JsonGenerationException, JsonMappingException,
     	      IOException {
 	    	    final Coordinate coord1 =
@@ -712,28 +712,40 @@ public class Api extends Controller {
 	    	    Path path = new Path();
 	    	    
 	    	    List<Integer> edgeIds = Api.graph.getEdgesBetweenPoints(coord1, coord2);
-	    	 
-				
-			    	Double total = 0.0;
-			    	
-		    	    for(Integer edgeId : edgeIds)
-		    	    {  		
-		    	    	TrafficEdge edge = Api.graph.getTrafficEdge(edgeId);
-		    	    	Geometry geom = edge.getGeometry();
-		    	    	
-		    	    	path.distance += edge.geLength();
-		    	   
-		    	    	
-		    	    	org.opentripplanner.util.model.EncodedPolylineBean polylineBean =  PolylineEncoder.createEncodings(geom);
-		    	    	total += Api.edgeVelocities.getStreetVelocity( BigInteger.valueOf(edgeId.longValue())) * edge.geLength();
-		    	    	
-		    	    	path.edgeGeoms.add(polylineBean.getPoints());
-		    	    }
-		    	    
-		    	    path.minSpeed = total / path.distance;
-		    	    path.maxSpeed = total / path.distance;
-		    	      	   
-		    	    renderJSON(path);
+		
+		    	Double total = 0.0;
+
+		    	HashMap<BigInteger,Double> streetVelocities = null;
+
+		    	if(hours != null && days != null)
+		    		streetVelocities = StatsEdge.getEdgeVelocityForHoursDays(hours, days, org.apache.commons.lang.StringUtils.join(edgeIds, ","));
+		    	
+	    	    for(Integer edgeId : edgeIds)
+	    	    {  		
+	    	    	TrafficEdge edge = Api.graph.getTrafficEdge(edgeId);
+	    	    	Geometry geom = edge.getGeometry();
+	    	    	
+	    	    	path.distance += edge.geLength();
+	    	    	
+	    	    	path.edgeIds = edgeIds;
+	    	    	
+	    	    	org.opentripplanner.util.model.EncodedPolylineBean polylineBean =  PolylineEncoder.createEncodings(geom);
+
+	    	    	if(streetVelocities != null) {
+	    	    		Double s = streetVelocities.get(BigInteger.valueOf(edgeId.longValue()));
+	    	    		if(s != null)
+	    	    			total += s * edge.geLength();
+	    	    	}	
+	    	    	else    	    
+	    	    		total += Api.edgeVelocities.getStreetVelocity( BigInteger.valueOf(edgeId.longValue())) * edge.geLength();
+	    	    	
+	    	    	path.edgeGeoms.add(polylineBean.getPoints());
+	    	    }
+	    	    
+	    	    path.minSpeed = total / path.distance;
+	    	    path.maxSpeed = total / path.distance;
+	    	      	   
+	    	    renderJSON(path);
 		    	    
 			   
     	  } 

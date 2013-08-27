@@ -14,7 +14,7 @@ function sizeContent() {
 
 $(document).ready(function() {
   
-	alertMap = new AlertMapView({updateFrequency: 2000});
+	alertMap = new AlertMapView({updateFrequency: 10000});
 
 	$("#datepickerFrom").datepicker();
 

@@ -186,7 +186,14 @@ function loadPath()
 	$('#saveform_destination_lat').val(endMarker.getLatLng().lat);
 	$('#saveform_destination_lon').val(endMarker.getLatLng().lng);
 	
-	$.get('/api/path?lat1=' + startMarker.getLatLng().lat + '&lon1=' + startMarker.getLatLng().lng + '&lat2=' + endMarker.getLatLng().lat + '&lon2=' + endMarker.getLatLng().lng, function(data) {
+	var filter = '';
+
+	if($('#hours').val() != '' && $('#days').val() != '') {
+		filter = '&hours=' + $('#hours').val() + '&days=' + $('#days').val();
+	}
+
+
+	$.get('/api/path?lat1=' + startMarker.getLatLng().lat + '&lon1=' + startMarker.getLatLng().lng + '&lat2=' + endMarker.getLatLng().lat + '&lon2=' + endMarker.getLatLng().lng + filter, function(data) {
 		path = data;
 		
 		$('#saveButton').show();
@@ -199,6 +206,8 @@ function loadPath()
 		var dist = (path.distance / 1000.0);
 		var time1 = (path.distance / speed / 60);
 		
+		$('#saveform_path').val(path.edgeIds.join(","));
+
 		$('#journeyDistance').text(dist.toFixed(2));
 		
 		$('#journeyTime').text(time1.toFixed(2));
@@ -284,6 +293,8 @@ $(document).ready(function() {
 	
 	$('#dragIntro').hide();
 
+	$('#hours').on('change', loadPath);
+	$('#days').on('change', loadPath);
 	
 	$('#customCompare1').hide();
 	$('#customCompare2').hide();

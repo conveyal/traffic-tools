@@ -23,6 +23,9 @@ public class Journey extends Model {
     public Double speed;
     public Double time;
     
+    @Column(columnDefinition="TEXT")
+    public String path;
+    
     @ManyToOne
     public Account account;
 }

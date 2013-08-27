@@ -20,6 +20,8 @@ public class Phone extends Model {
 
 	public String imei;
 	
+	public String phoneNumber;
+	
 	@ManyToOne
 	public Operator operator;
 	
@@ -138,6 +140,7 @@ public class Phone extends Model {
     public void clearPanic()
     {
     	this.panic = false;
+    	this.save();
     	
     	if(gcmKey != null && gcmKey != "")
     	{

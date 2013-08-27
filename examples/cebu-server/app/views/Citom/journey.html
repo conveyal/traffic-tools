@@ -54,9 +54,22 @@ New message:
 		
 		<hr style="margin: 5px 0;">
 		
-		<strong>Compare</strong>	
+		<strong>Historical Data</strong>	
 		<br/>	
-		<select onchange="compare();" id="compareWith" style="width: 120px"><option value="--">--</option><option>Last Hour</option><option>Last 12 Hours</option><option>Last 24 Hours</option><option value="custom">Custom</option></select> 
+
+		<select onchange="compare();" id="hours" style="width: 120px">
+			<option value="7,8,9,10">AM Peak</option>
+			<option value="11,12,13,14,15">Interpeak</option>
+			<option value="16,17,18,19,20">PM Peak</option>
+			<option value="24,1,2,3,4">Night</option>
+		</select> 
+
+		<select onchange="compare();" id="days" style="width: 120px">
+			<option value="2,3,4,5,6">Weekday</option>
+			<option value="1,7">Weekend</option>
+		</select> 
+
+		<!-- <select onchange="compare();" id="compareWith" style="width: 120px"><option value="--">--</option><option>Last Hour</option><option>Last 12 Hours</option><option>Last 24 Hours</option><option value="custom">Custom</option></select> 
 		
 		<div id="customCompare1">
 			<input style="width: 100px;" type="text" value="12-24-2012" id="datepicker1">
@@ -74,8 +87,7 @@ New message:
 			<div style="width: 200px;">Time: <span id="timerange2"></span>
 				<div id="slider-range2"></div>
 			</div>
-		</div>
-		<!--  <div id="dataNotAvailable"><strong>Data not available.</strong></div> -->
+		</div> 
 		<br/>
 		<div style="float: right; margin-left: 10px;">
 		<h3 id="journeyTimeDelta">--</h2>mins</div>
@@ -87,7 +99,7 @@ New message:
 		<div style="margin-left: 100px;">
 		<h3 id="avgSpeedDelta">--</h2>km/h
 		</div>
-		<span style="float: right;">Comparison data unavailable.</span>
+		<span style="float: right;">Comparison data unavailable.</span>-->
 		<br/>
 		<br/>
 		<strong>Saved Journeys</strong> 
@@ -141,13 +153,14 @@ New message:
   <div class="modal-body">
  
     	<form method="POST" id="journeySaveForm" action="@{Citom.saveJourney()}" class="form-horizontal">
-	    	<input type="hidden" id="saveform_origin_lat" name="origin_lat" value=""/>
-	    	<input type="hidden" id="saveform_origin_lon" name="origin_lon" value=""/>
-	    	<input type="hidden" id="saveform_destination_lat" name="destination_lat" value=""/>
-	    	<input type="hidden" id="saveform_destination_lon" name="destination_lon" value=""/>
+	    	<input type="hidden" id="saveform_origin_lat" name="originLat" value=""/>
+	    	<input type="hidden" id="saveform_origin_lon" name="originLon" value=""/>
+	    	<input type="hidden" id="saveform_destination_lat" name="destinationLat" value=""/>
+	    	<input type="hidden" id="saveform_destination_lon" name="destinationLon" value=""/>
 	    	<input type="hidden" id="saveform_time" name="time" value=""/>
 	    	<input type="hidden" id="saveform_distance" name="distance" value=""/>
 	    	<input type="hidden" id="saveform_speed" name="speed" value=""/>
+	    	<input type="hidden" id="saveform_path" name="path" value=""/>
     	
 		  <div class="control-group">
 		    <label class="control-label" for="name">Journey Name</label>

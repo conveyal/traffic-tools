@@ -13,6 +13,7 @@ public class PhoneSimple {
 	public Long id;
 
 	public String imei;
+	public String phoneNumber;
 
 	public Boolean panic;
 	public List<MessageData> messages;
@@ -34,6 +35,7 @@ public class PhoneSimple {
     {
     	this.id = phone.id;
     	this.imei = phone.imei;
+    	this.phoneNumber = phone.phoneNumber;
     	this.panic = phone.panic;
     	this.messages = phone.messages;
 

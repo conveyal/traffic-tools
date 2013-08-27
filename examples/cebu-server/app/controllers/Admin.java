@@ -116,22 +116,9 @@ public class Admin extends Controller {
 	}
 	
 	public static void vechicleStatus(String imei) {
+	
 		
-		Integer visible;
-		List<Phone> phones;
-		
-		if(imei == null)
-		{
-			phones = Phone.all().fetch();
-			visible = 10;
-		}
-		else
-		{
-			phones = Phone.find("imei = ?", imei).fetch();
-			visible = 1000;
-		}
-		
-		render(phones, visible);
+		systemStatus();
 	}
 
 }

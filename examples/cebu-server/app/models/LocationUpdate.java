@@ -147,25 +147,8 @@ public class LocationUpdate extends Model {
 	    		
 	    		Coordinate locationCoord = new Coordinate(lon, lat);
 	    		Observation observation = new Observation(phone.imei, observationTime, locationCoord, velocity, heading, gpsError);
-	    		
-	    		//Api.distanceCache.updateDistance(phone.imei, locationCoord, gpsError);
-	    		
-	    		DefaultHttpClient httpclient = new DefaultHttpClient();
-	        	HttpPost httpPost = new HttpPost("http://localhost:9001/application/sendData");
-	        	List <BasicNameValuePair> nvps = new ArrayList <BasicNameValuePair>();
-	        	nvps.add(new BasicNameValuePair("lat", lat.toString()));
-	        	nvps.add(new BasicNameValuePair("lon", lon.toString()));
-	        	nvps.add(new BasicNameValuePair("id", phoneId.toString()));
-	        	nvps.add(new BasicNameValuePair("time", new Long(observationTime.getTime()).toString()));
-	     
-	        	try {
-	        		httpPost.setEntity(new UrlEncodedFormEntity(nvps));
-	    			httpclient.execute(httpPost);
-	    		} catch (Exception e) {
-	    			e.printStackTrace();
-	    		}
-	    		
-	    		LocationUpdate.natveInsert(LocationUpdate.em(), phone.imei, observation, observationTime, observationTime, timeReceived, true);
+	    	
+	        	LocationUpdate.natveInsert(LocationUpdate.em(), phone.imei, observation, observationTime, observationTime, timeReceived, true);
     		}
     		catch(Exception e)
     		{
@@ -206,7 +189,7 @@ public class LocationUpdate extends Model {
     			.setParameter(12,  received)
     			
     			.executeUpdate();
-  
+ 
     }
     
     static public void natveInsert(EntityManager em, String imei, Observation obs, Boolean charging, Double battery, Date original, Date sent, Date received, Boolean boot, Boolean shutdown, Boolean failedNetwork, Integer signal)
@@ -237,6 +220,7 @@ public class LocationUpdate extends Model {
     			.setParameter(18,  original)
     			.executeUpdate();
     	
+    	
     }
     
     static public void natveInsert(EntityManager em, String imei, Boolean charging, Double battery, Date original, Date adjusted, Date sent, Date received, Boolean boot, Boolean shutdown, Boolean failedNetwork, Integer signal)
@@ -259,7 +243,7 @@ public class LocationUpdate extends Model {
     			.setParameter(11,  original)
     			.setParameter(12,  adjusted)
     			.executeUpdate();
-    	
+	
     }
     
     public void calcAdjustedTime()
