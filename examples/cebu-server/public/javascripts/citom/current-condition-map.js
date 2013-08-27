@@ -14,7 +14,8 @@ function sizeContent() {
 
 $(document).ready(function() {
   
-	alertMap = new AlertMapView({updateFrequency: 10000});
+	alertMap = new AlertMapView({updateFrequency: 10000, publicOnly: true});
+	alertMap.updateAlerts();
 
 });
 

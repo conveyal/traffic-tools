@@ -2,23 +2,33 @@
 
 #{set page:'index' /}
 
+<style>.alertdrop.select2-container .select2-results {max-height: 300px;}</style>
+
+<script id="incident-view-popup-tpl" type="text/html">
+<div>
+	<h3><img src="/public/images/alert_icons/{{ type }}.png"> {{ title }}</h3>	
+	<strong>Type:</strong> {{alertType type}}<br/>
+	<strong>Description:</strong> {{publicDescription}}<br/>
+	<strong>Active From:</strong> {{formatDate activeFrom }}<br/>
+	<strong>Active To:</strong> {{formatDate activeTo }}<br/>
+</div>
+</script>
+
+
 <div class="row-fluid" style="background-color: #fff;  position: relative;">
-<div id="map">
+
+	<div id="map">
+	</div>
+	
+	<div id="alertFilter" style="position: absolute; top:10px; right:10px; width:250px;">
+		
+	
+	</div>	
+
+	<div id="alertEditor" style="position: absolute; top:10px; left:50px; width:325px;">
+		
+	</div> 	
 </div>
 
-<div style="position: absolute; top:10px; right:10px; width:150px;">
-		<div class="well well-small">
-		
-		<strong>Current Conditions</strong> <!-- <a href="#" style="float: right;">Generate Report</a>  -->
-		
-		<table>
-			<tr><td style="background-color: #A50026;">&nbsp;</td><td>&nbsp;&lt; 20km/h</td></tr>
-			<tr><td style="background-color: #FDAE61;">&nbsp;</td><td>&nbsp;20-30km/h</td></tr>
-			<tr><td style="background-color: #1A9850;">&nbsp;</td><td>&nbsp;&gt; 30km/h</td></tr>
-		</table>
-		
-		</div>
-</div>
-</div>
-		
-<script src="@{'/public/javascripts/cebu_current.js'}"></script>
+#{script "citom/alert-backbone.js"/}
+#{script "citom/current-condition-map.js"/}

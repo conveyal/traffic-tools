@@ -128,6 +128,10 @@ var AlertCollection =  Backbone.Collection.extend({
             this.dataParam = {};
             this.onSuccess = opts.success;
             this.view = opts.view;
+            this.publicOnly = opts.publicOnly;
+            
+            if(this.publicOnly)
+            	this.url = '/api/alerts';
           },
 
           getData: function(opts){
@@ -589,9 +593,11 @@ var AlertMapView = Backbone.View.extend({
       // set update frequency from otps
       this.updateFrequency = opts.updateFrequency;
 
+      this.publicOnly = opts.publicOnly;
+      
       // create/bind collection if not set via opts
       if(opts.collection == undefined)
-          this.collection = new AlertCollection({success: this.onCollectionUpdate});
+          this.collection = new AlertCollection({success: this.onCollectionUpdate, publicOnly: this.publicOnly});
 
       // Marker caches
       this.alertLayers = {};
@@ -645,8 +651,11 @@ var AlertMapView = Backbone.View.extend({
       // Add a layer group for taxis
       this.alertLayerGroup = L.layerGroup().addTo(this.map);
 
-      this.editor = new AlertEditorView({map: this.map, collection: this.collection});
-      this.filter = new AlertFilterView({collection: this.collection});
+      if(!this.publicOnly) {
+    	  this.editor = new AlertEditorView({map: this.map, collection: this.collection});
+          this.filter = new AlertFilterView({collection: this.collection});  
+      }
+      
 
       //this.updateAlerts();
 
