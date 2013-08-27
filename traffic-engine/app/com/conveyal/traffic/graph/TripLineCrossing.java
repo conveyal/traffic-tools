@@ -7,6 +7,7 @@ import models.MapEvent;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import controllers.Application;
 import util.GeoUtils;
 import util.MapEventData;
 
@@ -23,11 +24,14 @@ public class TripLineCrossing implements Comparable<TripLineCrossing> {
 		this.timeAtCrossing = timeAtCrossing;
 
 		
-		try {
-			MapEvent.instance.event.publish(this.mapEvent());
-		}
-		catch(Exception e) {
-			e.printStackTrace();
+		// publish event only if there are listeners
+		if(Application.mapListeners.hasListeners()) {
+			try {
+				MapEvent.instance.event.publish(this.mapEvent());
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+			}
 		}
 	
 	}

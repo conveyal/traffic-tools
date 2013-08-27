@@ -258,8 +258,7 @@ public class LocationService extends Service {
 			previousUpdate = location.getTime();
 		}
 		
-		if(firstUpdate == null)
-			firstUpdate = new Date().getTime();
+		
 			
 		locationUpdateBuilder.setTime(firstUpdate);
 

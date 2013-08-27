@@ -2,10 +2,12 @@ package controllers;
 
 import play.*;
 import play.mvc.*;
+import redis.clients.jedis.BinaryJedis;
+import redis.clients.jedis.Jedis;
 import util.GeoUtils;
 import util.MapEventData;
+import util.MapListener;
 import util.ProjectedCoordinate;
-
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,6 +17,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
+import jobs.QueueSubscriberJob;
 import models.*;
 
 import org.codehaus.jackson.JsonGenerationException;
@@ -23,7 +26,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.opentripplanner.routing.impl.GraphServiceImpl;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Graph.LoadLevel;
-
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 
@@ -33,15 +35,18 @@ import com.conveyal.traffic.graph.VehicleObservation;
 import com.conveyal.traffic.graph.VehicleState;
 import com.typesafe.config.ConfigFactory;
 import com.vividsolutions.jts.geom.Coordinate;
+import com.conveyal.trafficprobe.TrafficProbeProtos;
 
 
 public class Application extends Controller {
 	
-	public static PrintWriter pw;
-	
 	public static TrafficGraph graph = TrafficGraph.load(Play.configuration.getProperty("application.otpGraphPath"));
+	
+	public static Jedis jedis = new Jedis("localhost");
+	
+	public static MapListener mapListeners = new MapListener();
 
-	public static void sendData(Long id, Long time, Double lat, Double lon) {
+	/*public static void sendData(Long id, Long time, Double lat, Double lon) {
 		
 		ProjectedCoordinate pc = GeoUtils.convertLonLatToEuclidean(new Coordinate(lon,lat));
 		
@@ -50,49 +55,72 @@ public class Application extends Controller {
 		graph.updateVehicle(id, vo);
 		
 		Logger.info("message for: " +id );
-	}
+	}*/
 
-	public static void loadCebu() throws IOException {
-	    
+	
+	
+	public static void loadCsv(File csvFile, Boolean useTimeCorrection) throws IOException {
 		
-		 //FileWriter outFile = new FileWriter(new File("/tmp/json.out"));
-		 //pw = new PrintWriter(outFile);
-		 
-		 //for(int offset = 0; offset <= 2000000; offset += 10000){
-			
-			 //Logger.info("load offset: " + offset);
+		// reads a csv file in and pushes to redis
+		// format:  device_id,
 
-			 //for(Object o : LocationUpdate.em().createNativeQuery("SELECT imei, timestamp, lat, lon from locationupdate WHERE lat < 30 AND (date_part('month', timestamp) = 4) ORDER BY id asc LIMIT 10000 OFFSET " + offset).getResultList()){
+		// default: correct times on sequence values missing increment without location updates
+		if(useTimeCorrection == null)
+			useTimeCorrection = true;
 		
-		BufferedReader br = new BufferedReader(new FileReader(new File("/mnt/cebu.csv")));
+		BufferedReader br = new BufferedReader(new FileReader(csvFile));
 		String line;
 
 		HashMap<String, Double> timeCorrection = new HashMap<String, Double>();
 		HashMap<String, Double> lastTime = new HashMap<String, Double>();
 
-
+		TrafficProbeProtos.LocationUpdate.Builder locationUpdateBuilder = null;
+		
+		String lastImei = "";
+		Integer updateSize = 0;
+		
 		while ((line = br.readLine()) != null) {
 
 			String[] lineParts = line.split(",");
 
 		    String imei = lineParts[0].trim();
-
-		    if(!lastTime.contains(imei)) {
-		    	lastTime.put(imei, 0.0);
-		    	timeCorrection.put(imei, 0.0);
+		    
+		    if(locationUpdateBuilder == null) {
+		    	locationUpdateBuilder = TrafficProbeProtos.LocationUpdate.newBuilder();
 		    }
+		    else if(!imei.equals(lastImei) || updateSize > 10) {
+		    	
+		    	
+		    	// flush updates 
+		    	
+		    	QueueSubscriberJob.jedis.lpush("queue".getBytes(), locationUpdateBuilder.build().toByteArray());
+		    	
+		    	locationUpdateBuilder = TrafficProbeProtos.LocationUpdate.newBuilder();
+		    	
+		    	updateSize = 0;
+		    }
+		    
+		    if(useTimeCorrection) {
+		    	if(!lastTime.containsKey(imei)) {
+			    	lastTime.put(imei, 0.0);
+			    	timeCorrection.put(imei, 0.0);
+			    }
+		    }
+		    
 		    
 		    Double ms = Double.parseDouble(lineParts[1].trim());
 
-		    if(lastTime.get(imei).equals(ms)) {
-		    	Double tc = timeCorrection.get(imei);
-		    	tc += 5.0;
-		    	ms += tc;
-		    	timeCorrection.put(imei, tc);
-		    }
-		    else {
-		    	timeCorrection.put(imei, 0.0);
-		    	lastTime.put(imei, ms);
+		    if(useTimeCorrection) {
+			    if(lastTime.get(imei).equals(ms)) {
+			    	Double tc = timeCorrection.get(imei);
+			    	tc += 5.0;
+			    	ms += tc;
+			    	timeCorrection.put(imei, tc);
+			    }
+			    else {
+			    	timeCorrection.put(imei, 0.0);
+			    	lastTime.put(imei, ms);
+			    }
 		    }
 
 			Date time = new Date(Math.round(ms));
@@ -101,16 +129,9 @@ public class Application extends Controller {
 			Double lat = Double.parseDouble(lineParts[2].trim());
 			Double lon = Double.parseDouble(lineParts[3].trim());
 
-			Long vehicleId = graph.getVehicleId(imei);
-
-
-			if(lat == null || lon == null)
-				continue;
-
-			VehicleObservation vo = new VehicleObservation(vehicleId, time.getTime(), GeoUtils.convertLatLonToEuclidean(new Coordinate(lat, lon)));
-
-
-			graph.updateVehicle(vehicleId, vo);
+						
+			lastImei = imei;
+		    updateSize++;
 		}
 
 		br.close();
@@ -139,21 +160,6 @@ public class Application extends Controller {
 		render();
 		 
 	}
-
-		 
-	public static void saveCebuStats() {
-		    
-		for(Integer edge : graph.getEdgesWithStats()) {
-			for(int i = 1; i < 8; i++) {
-				for(int j = 0; j < 24; j++ ) {
-					if(graph.getEdgeObservations(edge, i, j) > 0)
-						StatsEdge.nativeInsert(edge, i, j, graph.getEdgeSpeed(edge, i, j), graph.getTrafficEdge(edge).getGeometry(),  graph.getEdgeObservations(edge, i, j),  graph.getEdgeSpeedTotal(edge, i, j));
-				}
-			}
-		}
-    	
-        ok();
-    }
 	
     public static void simulate() {
     	
@@ -182,6 +188,10 @@ public class Application extends Controller {
     	vs.simulateUpdatePosition(edges, 15.0);
     	
         ok();
+    }
+    
+    public static void metadata() {
+    	ok();
     }
 
     

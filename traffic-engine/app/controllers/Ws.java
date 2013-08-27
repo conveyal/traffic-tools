@@ -16,14 +16,16 @@ public class Ws extends WebSocketController {
 	 public static void map() throws InterruptedException {
 		 
 	        while(inbound.isOpen()) {
-	             
+	            
+	        	Application.mapListeners.addListener();
+	        	
 	        	String event = await(MapEvent.instance.event.nextEvent());
 	        
 	        	outbound.send(event);
 	        	
-	        	
-	        	
 	        }
+	        
+	        Application.mapListeners.removeListener();
 	        
 	    }
 }

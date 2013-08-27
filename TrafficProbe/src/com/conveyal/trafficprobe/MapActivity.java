@@ -128,9 +128,10 @@ public class MapActivity extends Activity {
 		mapView.setBuiltInZoomControls(true);
 		mapView.setMultiTouchControls(true);
 	    
-		mapView.getController().setCenter(new GeoPoint(10.3021258, 123.89616));
 		mapView.getController().setZoom(15);
-	    
+		
+		mapView.getController().setCenter(new GeoPoint(10.3021258, 123.89616));
+
 	    locOverlay = new MyLocationOverlay(this, mapView);
 	    locOverlay.enableMyLocation();
 	    locOverlay.enableFollowLocation();

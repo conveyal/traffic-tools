@@ -41,11 +41,13 @@ function clearSimulation() {
 
 $(document).ready(function() {
 	
-  map = new L.map('map').setView(defaultLatLon, 13);
+  map = new L.map('map').setView([38.8921, -77.0455], 15);
 
   L.tileLayer(mbUrl, mbOptions).addTo(map);
 
 	geoJsonOverlay = L.layerGroup();
 	geoJsonOverlay.addTo(map);
+	
+	loadData();
 
 });

@@ -34,11 +34,14 @@ public class TrafficEdgeTraversal {
 			
 			//Logger.info("Edge traversal: " + parentEdge.getId() + "(velocity: " + velocity + ")");
 			
-			try {
-				MapEvent.instance.event.publish(this.mapEvent());
-			}
-			catch(Exception e) {
-				e.printStackTrace();
+			// publish map event only if there are listeners
+			if(Application.mapListeners.hasListeners()) {
+				try {
+					MapEvent.instance.event.publish(this.mapEvent());
+				}
+				catch(Exception e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		else
@@ -71,18 +74,16 @@ public class TrafficEdgeTraversal {
 		
 	}
 	
-public String mapEvent() throws JsonGenerationException, IOException {
+	public String mapEvent() throws JsonGenerationException, IOException {
 	
 		
-		/*MapEventData med = new MapEventData();
+		MapEventData med = new MapEventData();
 		
 		med.message = "Velocity: " + velocity;
 		med.type = "streetEdge";
 		med.geom = parentEdge.getGeometry();
 
 		ObjectMapper mapper = new ObjectMapper();
-		Application.pw.println(mapper.writeValueAsString(med)  + ",");*/
-		return "";
-	
+		return mapper.writeValueAsString(med);
 	}
 }
