@@ -48,7 +48,7 @@ sudo /etc/init.d/postgresql restart
 
 ### download cebu-traffic 
 
-wget https://github.com/openplans/cebu-taxi/archive/master.zip
+wget https://github.com/conveyal/traffic-tools/archive/master.zip
 
 unzip master.zip
 
