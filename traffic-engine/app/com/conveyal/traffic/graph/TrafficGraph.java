@@ -291,22 +291,22 @@ public class TrafficGraph {
 			jedisStats.hincrBy("weekend_" + hour + "_s", edgeId.toString(), cmSpeed);
 			jedisStats.hincrBy("weekend_" + hour + "_c", edgeId.toString(), 1);
 			
-			jedisStats.incrBy("weekend_" + hour + "_s", cmSpeed);
-			jedisStats.incr("weekend_" + hour + "_c");
+			jedisStats.incrBy("summary_weekend_" + hour + "_s", cmSpeed);
+			jedisStats.incr("summary_weekend_" + hour + "_c");
 		}
 		else {
 			jedisStats.hincrBy("weekday_" + hour + "_s", edgeId.toString(), cmSpeed);
 			jedisStats.hincrBy("weekday_" + hour + "_c", edgeId.toString(), 1);
 			
-			jedisStats.incrBy("weekday_" + hour + "_s", cmSpeed);
-			jedisStats.incr("weekday_" + hour + "_c");
+			jedisStats.incrBy("summary_weekday_" + hour + "_s", cmSpeed);
+			jedisStats.incr("summary_weekday_" + hour + "_c");
 		}
 		
 		jedisStats.hincrBy("cumulative_" + hour + "_s", edgeId.toString(), cmSpeed);
 		jedisStats.hincrBy("cumulative_" + hour + "_c", edgeId.toString(), 1);
 		
-		jedisStats.incrBy("cumulative_" + hour + "_s", cmSpeed);
-		jedisStats.incr("cumulative_" + hour + "_c");
+		jedisStats.incrBy("summary_cumulative_" + hour + "_s", cmSpeed);
+		jedisStats.incr("summary_cumulative_" + hour + "_c");
 		
 		Application.jedisPool.returnResource(jedisStats);
 		
