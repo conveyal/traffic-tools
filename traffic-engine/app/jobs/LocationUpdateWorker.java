@@ -15,6 +15,8 @@ import controllers.Application;
 
 public class LocationUpdateWorker implements Runnable {
 
+	private Jedis jedis = new Jedis("localhost");
+	
 	byte[] data = null;
 	
 	public LocationUpdateWorker(byte[] data) {
@@ -38,10 +40,8 @@ public class LocationUpdateWorker implements Runnable {
 				Long timeOffset = 0l;
 				
 				for(Location location : locationUpdate.getLocationList()) {
-					
-					timeOffset += location.getTimeoffset();
-					
-					Date observationTime = new Date(intitialTimestamp + timeOffset);
+										
+					Date observationTime = new Date(intitialTimestamp + location.getTimeoffset());
 					
 					Double lat = new Double(location.getLat());
 		    		Double lon = new Double(location.getLon());
@@ -55,7 +55,7 @@ public class LocationUpdateWorker implements Runnable {
 					Application.graph.updateVehicle(vehicleId, vo);
 				}
 				
-				Application.jedis.incrBy("updateCounter", locationUpdate.getLocationList().size());
+				jedis.incrBy("totalLocationUpdates", locationUpdate.getLocationList().size());
 			}
 				
 		} catch (InvalidProtocolBufferException e) {

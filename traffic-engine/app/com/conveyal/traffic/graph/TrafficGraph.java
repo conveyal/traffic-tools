@@ -91,7 +91,7 @@ public class TrafficGraph {
 	
 	private ConcurrentHashMap<Long, VehicleState> vehicles = new ConcurrentHashMap<Long, VehicleState>(8, 0.9f, 1);
 	private ConcurrentHashMap<String, Long> vehicleIds = new ConcurrentHashMap<String, Long>(8, 0.9f, 1);
-	private ConcurrentHashMap<Long, Object> vehicleUpdateLock = new ConcurrentHashMap<Long, Object>(8, 0.9f, 1);
+	private ConcurrentHashMap<Long, Long> vehicleUpdateLock = new ConcurrentHashMap<Long, Long>(8, 0.9f, 1);
 	
 	public RoutingRequest getOptions() {
 		return defaultOptions;
@@ -285,9 +285,9 @@ public class TrafficGraph {
 	public Long getVehicleUpdateLock(Long vehicleId) {
 		
 		if(!vehicleUpdateLock.contains(vehicleId))
-			vehicleUpdateLock.put(vehicleId, new Object());
+			vehicleUpdateLock.put(vehicleId, new Long(0l));
 		
-		return vehicleIds.get(vehicleId);
+		return vehicleUpdateLock.get(vehicleId);
 	}
 	
 	public void updateVehicle(Long vehicleId, VehicleObservation observation) {

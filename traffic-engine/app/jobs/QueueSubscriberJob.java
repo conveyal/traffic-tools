@@ -1,4 +1,5 @@
 package jobs;
+import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -14,23 +15,25 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import util.GeoUtils;
 
-//@OnApplicationStart
+@OnApplicationStart(async=true)
 public class QueueSubscriberJob extends Job {
 	
-	public static BinaryJedis jedis = new BinaryJedis("localhost");
+	private BinaryJedis jedis = new BinaryJedis("localhost");
+	private Jedis jedisStats = new Jedis("localhost");
 	
     public void doJob() {
     	
     	ExecutorService executor = Executors.newFixedThreadPool(3);
 
-    	
+    	Date lastStatsUpdate = new Date();
+    	Long lastTotalLocationUpdates = 0l;
+    	if(jedisStats.get("totalLocationUpdates") != null) 
+    		lastTotalLocationUpdates = Long.parseLong(jedisStats.get("totalLocationUpdates"));
+    		
     	try {
 	    	while(true) {
 	    		
 	    		byte[] queueVal = jedis.lpop("queue".getBytes());
-	    		
-	    		// kick off location update worker thread to process data 
-	    		executor.execute(new LocationUpdateWorker(queueVal));
 	    		
 	    		// wait for data if queue is empty
 	    		if(queueVal == null) {
@@ -46,7 +49,21 @@ public class QueueSubscriberJob extends Job {
 	    			
 	    			// process data
 	    			
+	    			// kick off location update worker thread to process data 
+		    		executor.execute(new LocationUpdateWorker(queueVal));
 	    			
+	    		}
+	    		
+	    		Long elapsedMs = (new Date().getTime() - lastStatsUpdate.getTime());
+	    		if(elapsedMs > 1000 * 10) {
+	    			
+	    			Long currentTotalLocationUpdates = 0l;
+	    			if(jedisStats.get("totalLocationUpdates".getBytes()) != null) 
+	    				currentTotalLocationUpdates = Long.parseLong(jedisStats.get("totalLocationUpdates"));
+	    			
+	    			Double  processingRate =  ((double)(currentTotalLocationUpdates - (double)lastTotalLocationUpdates) / 10);
+	    			
+	    			jedisStats.set("processingRate",processingRate.toString());
 	    		}
 	    	}
     	}

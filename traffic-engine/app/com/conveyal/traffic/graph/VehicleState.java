@@ -68,8 +68,6 @@ public class VehicleState {
 			
 			try {
 				currentObservation.mapEvent();
-				//Application.pw.println( + ",");
-				//MapEvent.instance.event.publish();
 			}
 			catch(Exception e) {
 				e.printStackTrace();
@@ -78,7 +76,9 @@ public class VehicleState {
 			if(lastObservation != null) {
 				
 				if(currentObservation.before(lastObservation)) {
-
+					Date c1 = new Date(currentObservation.getTime());
+					Date c2 = new Date(lastObservation.getTime());
+					Logger.info(c1.toString() + " < " + c2.toString());
 					throw new ObservationOutOfOrderException(lastObservation, currentObservation);
 				}
 				

@@ -42,110 +42,140 @@ public class Application extends Controller {
 	
 	public static TrafficGraph graph = TrafficGraph.load(Play.configuration.getProperty("application.otpGraphPath"));
 	
-	public static Jedis jedis = new Jedis("localhost");
-	
 	public static MapListener mapListeners = new MapListener();
-
-	/*public static void sendData(Long id, Long time, Double lat, Double lon) {
-		
-		ProjectedCoordinate pc = GeoUtils.convertLonLatToEuclidean(new Coordinate(lon,lat));
-		
-		VehicleObservation vo = new VehicleObservation(id, time, pc);
-		
-		graph.updateVehicle(id, vo);
-		
-		Logger.info("message for: " +id );
-	}*/
-
 	
-	
-	public static void loadCsv(File csvFile, Boolean useTimeCorrection) throws IOException {
+
+	public static void loadCsv(File csvFile) throws IOException {
 		
 		// reads a csv file in and pushes to redis
-		// format:  device_id,
+		// format:  device_id,seconds/millisecons,lat,lon
 
-		// default: correct times on sequence values missing increment without location updates
-		if(useTimeCorrection == null)
-			useTimeCorrection = true;
-		
 		BufferedReader br = new BufferedReader(new FileReader(csvFile));
 		String line;
 
-		HashMap<String, Double> timeCorrection = new HashMap<String, Double>();
-		HashMap<String, Double> lastTime = new HashMap<String, Double>();
+		HashMap<String, Long> timeCorrection = new HashMap<String, Long>();
+		HashMap<String, Long> lastTime = new HashMap<String, Long>();
 
 		TrafficProbeProtos.LocationUpdate.Builder locationUpdateBuilder = null;
 		
 		String lastImei = "";
 		Integer updateSize = 0;
 		
+		BinaryJedis jedis = new BinaryJedis("localhost");
+		
 		while ((line = br.readLine()) != null) {
-
-			String[] lineParts = line.split(",");
-
-		    String imei = lineParts[0].trim();
-		    
-		    if(locationUpdateBuilder == null) {
-		    	locationUpdateBuilder = TrafficProbeProtos.LocationUpdate.newBuilder();
-		    }
-		    else if(!imei.equals(lastImei) || updateSize > 10) {
-		    	
-		    	
-		    	// flush updates 
-		    	
-		    	QueueSubscriberJob.jedis.lpush("queue".getBytes(), locationUpdateBuilder.build().toByteArray());
-		    	
-		    	locationUpdateBuilder = TrafficProbeProtos.LocationUpdate.newBuilder();
-		    	
-		    	updateSize = 0;
-		    }
-		    
-		    if(useTimeCorrection) {
-		    	if(!lastTime.containsKey(imei)) {
-			    	lastTime.put(imei, 0.0);
-			    	timeCorrection.put(imei, 0.0);
+			try {
+				String[] lineParts = line.split(",");
+	
+			    String imei = lineParts[0].trim();
+			    
+			    if(locationUpdateBuilder == null) {
+			    	locationUpdateBuilder = TrafficProbeProtos.LocationUpdate.newBuilder();
 			    }
-		    }
-		    
-		    
-		    Double ms = Double.parseDouble(lineParts[1].trim());
-
-		    if(useTimeCorrection) {
+			    else if(!imei.equals(lastImei) || updateSize > 10) {
+			    	
+			    	// flush updates 
+			    	
+			    	jedis.rpush("queue".getBytes(), locationUpdateBuilder.build().toByteArray());
+			    	
+			    	locationUpdateBuilder = TrafficProbeProtos.LocationUpdate.newBuilder();
+			    	
+			    	updateSize = 0;
+			    }
+			    
+		    	if(!lastTime.containsKey(imei)) {
+			    	lastTime.put(imei, 0l);
+			    	timeCorrection.put(imei, 0l);
+			    }
+		    	Long ms = null;
+		    		
+			    try {
+			    	ms = Long.parseLong(lineParts[1].trim());
+			    } 
+			    catch(NumberFormatException ne) {
+			    	Double secondsDouble = Double.parseDouble(lineParts[1].trim());
+			    	ms = secondsDouble.longValue() * 1000;
+			    }
+			    
+			    // convert to milliseconds if in seconds
+			    if(ms < 10000000000l)
+			    	ms = ms * 1000;
+			    
+			    // correct times on sequence values missing increment without location updates
 			    if(lastTime.get(imei).equals(ms)) {
-			    	Double tc = timeCorrection.get(imei);
-			    	tc += 5.0;
+			    	Long tc = timeCorrection.get(imei);
+			    	tc += 5000;
 			    	ms += tc;
 			    	timeCorrection.put(imei, tc);
 			    }
 			    else {
-			    	timeCorrection.put(imei, 0.0);
+			    	timeCorrection.put(imei, 0l);
 			    	lastTime.put(imei, ms);
 			    }
-		    }
-
-			Date time = new Date(Math.round(ms));
-
-
-			Double lat = Double.parseDouble(lineParts[2].trim());
-			Double lon = Double.parseDouble(lineParts[3].trim());
-
-						
-			lastImei = imei;
-		    updateSize++;
+			    
+			    Long lt = lastTime.get(imei);
+			    
+			    Double lat = Double.parseDouble(lineParts[2].trim());
+				Double lon = Double.parseDouble(lineParts[3].trim());
+				
+				TrafficProbeProtos.LocationUpdate.Location.Builder locationBuilder = TrafficProbeProtos.LocationUpdate.Location.newBuilder();
+				    
+				locationBuilder.setLat(lat.floatValue());
+				locationBuilder.setLon(lon.floatValue());
+				
+				Long timeOffset = ms - lt;
+				
+				// protocol buffer def assumes timeOffset in milliseconds is within bound of int32
+				locationBuilder.setTimeoffset((int)(long)timeOffset);
+	
+				locationUpdateBuilder.addLocation(locationBuilder);
+				
+				Long vehicleId = Application.graph.getVehicleId(imei);
+				
+				locationUpdateBuilder.setPhone(vehicleId);
+				locationUpdateBuilder.setTime(ms);
+				
+				Date time = new Date(ms);
+				
+				Logger.info(imei + "," + time  + "," + lat  + "," + lon);
+							
+				lastImei = imei;
+			    updateSize++;
+			}
+			catch(Exception e) {
+				Logger.warn("Couldn't parse CSV line: " + line);
+			}
 		}
-
+		
+		// flush updates
+		if(updateSize > 0) 
+			jedis.rpush("queue".getBytes(), locationUpdateBuilder.build().toByteArray());
+		
 		br.close();
 
-					
 
-		 //pw.close();
-		 
         ok();
     }
 
 	public static void index() {
 		
 		render();
+		 
+	}
+	
+	public static void data() {
+		
+		Jedis jedis = new Jedis("localhost");
+		
+		Long unprocessedLocationUpdates = jedis.llen("queue");
+		
+		Long totalLocationUpdates = 0l;
+		if(jedis.get("totalLocationUpdates") != null) 
+			totalLocationUpdates = Long.parseLong(jedis.get("totalLocationUpdates"));
+		
+		String processingRate = jedis.get("processingRate");
+		
+		render(unprocessedLocationUpdates, totalLocationUpdates, processingRate);
 		 
 	}
 	
