@@ -16,11 +16,13 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,13 +50,13 @@ import org.opentripplanner.routing.spt.ShortestPathTree;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.index.strtree.STRtree;
 
+import controllers.Application;
 import gov.sandia.cognition.math.matrix.Vector;
 import gov.sandia.cognition.math.matrix.VectorFactory;
 
@@ -63,6 +65,8 @@ import org.springframework.context.support.GenericApplicationContext;
 
 import play.Logger;
 import play.Play;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import util.GeoUtils;
 import util.ProjectedCoordinate;
 
@@ -87,7 +91,7 @@ public class TrafficGraph {
 	
 	private HashMap<Integer, TrafficEdge> trafficEdgeMap = null;
 
-	private ConcurrentHashMap<Integer, TrafficEdgeStats> trafficStats = new ConcurrentHashMap<Integer, TrafficEdgeStats>(8, 0.9f, 1);
+	//private ConcurrentHashMap<Integer, TrafficEdgeStats> trafficStats = new ConcurrentHashMap<Integer, TrafficEdgeStats>(8, 0.9f, 1);
 	
 	private ConcurrentHashMap<Long, VehicleState> vehicles = new ConcurrentHashMap<Long, VehicleState>(8, 0.9f, 1);
 	private ConcurrentHashMap<String, Long> vehicleIds = new ConcurrentHashMap<String, Long>(8, 0.9f, 1);
@@ -239,41 +243,248 @@ public class TrafficGraph {
 		
 	}
 	
-	public void updateEdgeSpeed(Integer id, int day, int hour, Double speed) {
-		if(!trafficStats.containsKey(id))
-			trafficStats.put(id, new TrafficEdgeStats(id));
+	public void updateEdgeSpeed (Integer edgeId, Date d, Double speed) {
 		
-		Logger.info("Speed: " + speed);
-		trafficStats.get(id).update(speed, day, hour);
+		Jedis jedisStats = Application.jedisPool.getResource();
+		
+		// storing stats in keys with yyyy_mm_dd_hh base 
+		// observation counts are stored in [key]_c while speed totals are stored in [key]_s 
+		// both are hashes of edge ids
+		
+		jedisStats.incr("totalObservations");
+		
+		Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(d.getTime());
+		
+		Integer year = calendar.get(Calendar.YEAR);
+		Integer month = calendar.get(Calendar.MONTH);
+		Integer day = calendar.get(Calendar.DAY_OF_MONTH);
+		Integer hour = calendar.get(Calendar.HOUR_OF_DAY);
+		Integer dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+		
+		
+		// count observations by time bucket
+		String statsKeyBase = year.toString();
+		jedisStats.hincrBy(statsKeyBase, month.toString(), 1);
+		
+		statsKeyBase += "_" + month;
+		jedisStats.hincrBy(statsKeyBase, day.toString(), 1);
+		
+		statsKeyBase += "_" + day; 
+		jedisStats.hincrBy(statsKeyBase, hour.toString(), 1);
+		
+		statsKeyBase += "_" + hour; 
+		
+		String countKey = statsKeyBase + "_c";
+		String speedKey = statsKeyBase + "_s";
+
+		// increment count for edgeId
+		jedisStats.hincrBy(countKey, edgeId.toString(), 1);
+		
+		// speeds are stored as cm/s as integers for efficiency
+		Long cmSpeed = Math.round(speed * 100);
+		
+		// increment speed
+		jedisStats.hincrBy(speedKey, edgeId.toString(), cmSpeed);
+		
+		if(dayOfWeek.equals(Calendar.SATURDAY) || dayOfWeek.equals(Calendar.SUNDAY)) {
+			jedisStats.hincrBy("weekend_" + hour + "_s", edgeId.toString(), cmSpeed);
+			jedisStats.hincrBy("weekend_" + hour + "_c", edgeId.toString(), 1);
+			
+			jedisStats.incrBy("weekend_" + hour + "_s", cmSpeed);
+			jedisStats.incr("weekend_" + hour + "_c");
+		}
+		else {
+			jedisStats.hincrBy("weekday_" + hour + "_s", edgeId.toString(), cmSpeed);
+			jedisStats.hincrBy("weekday_" + hour + "_c", edgeId.toString(), 1);
+			
+			jedisStats.incrBy("weekday_" + hour + "_s", cmSpeed);
+			jedisStats.incr("weekday_" + hour + "_c");
+		}
+		
+		jedisStats.hincrBy("cumulative_" + hour + "_s", edgeId.toString(), cmSpeed);
+		jedisStats.hincrBy("cumulative_" + hour + "_c", edgeId.toString(), 1);
+		
+		jedisStats.incrBy("cumulative_" + hour + "_s", cmSpeed);
+		jedisStats.incr("cumulative_" + hour + "_c");
+		
+		Application.jedisPool.returnResource(jedisStats);
+		
 	}
 	
-	public Double getEdgeSpeed(Integer id, int day, int hour) {
-		if(!trafficStats.containsKey(id))
-			return null;
+	public Double getEdgeSpeed(Integer edgeId, Date d) {
 		
-		return trafficStats.get(id).average(day, hour);
+		Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(d.getTime());
+        
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+		
+		Jedis jedisStats = Application.jedisPool.getResource();
+		
+		String statsKeyBase = year + "_" + month + "_" + day + "_" + hour;
+		
+		String countKey = statsKeyBase + "_c";
+		String speedKey = statsKeyBase + "_s";
+		
+		String countStr = jedisStats.hget(countKey, edgeId.toString());
+		String speedStr = jedisStats.hget(speedKey, edgeId.toString());
+		
+		Application.jedisPool.returnResource(jedisStats);
+		
+		Double speed = null;
+		
+		if(countStr != null && !countStr.isEmpty() && speedStr != null && speedStr.isEmpty()) {
+			speed = (Double)(Long.parseLong(speedStr) / Long.parseLong(countStr) / 100.0); 
+		}
+		
+		return speed;
 	}
 	
-	public Double getEdgeSpeedTotal(Integer id, int day, int hour) {
-		if(!trafficStats.containsKey(id))
-			return null;
+	public Map<Long,Double> getCumulativeGraphSpeed(int minHour, int maxHour) {
 		
-		return trafficStats.get(id).total(day, hour);
+		Jedis jedisStats = Application.jedisPool.getResource();
+		
+		HashMap<Long,Double> edgeSpeedTotals = new HashMap<Long,Double>();
+		HashMap<Long,Long> edgeCounts = new HashMap<Long,Long>();
+		
+		for(int h = minHour; h <= maxHour; h++) {
+			
+			String statsKeyBase = "cumulative_" + h;
+			
+			String countKey = statsKeyBase + "_c";
+			String speedKey = statsKeyBase + "_s";
+			
+			Map<String,String> counts = jedisStats.hgetAll(countKey);
+			Map<String,String> speeds = jedisStats.hgetAll(speedKey);
+			
+			for(String k : counts.keySet()) {
+		
+				Long edgeId = Long.parseLong(k);
+				Long count = Long.parseLong(counts.get(k));
+				
+				Long speed = Long.parseLong(speeds.get(k));
+				
+				edgeSpeedTotals.put(edgeId, edgeSpeedTotals.get(edgeId) + (speed / 100.0));
+				edgeCounts.put(edgeId, edgeCounts.get(edgeId) + count);
+			}
+
+		}
+		
+		Application.jedisPool.returnResource(jedisStats);
+		
+		HashMap<Long,Double> edgeSpeeds = new HashMap<Long,Double>();
+		
+		for(Long edgeId : edgeCounts.keySet()) {
+		
+			edgeSpeeds.put(edgeId, edgeSpeedTotals.get(edgeId) / edgeCounts.get(edgeId));
+		}
+	
+		return edgeSpeeds;
 	}
 	
-	public long getEdgeObservations(Integer id, int day, int hour) {
-		if(!trafficStats.containsKey(id))
-			return 0;
-		
-		return trafficStats.get(id).observationCount(day, hour);
-	}
 	
-	public Set<Integer> getEdgesWithStats() {
-		return trafficStats.keySet();
+	public Map<Long,Double> getGraphSpeed(Date d) {
+		
+		Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(d.getTime());
+        
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+		
+		Jedis jedisStats = Application.jedisPool.getResource();
+		
+		String statsKeyBase = year + "_" + month + "_" + day + "_" + hour;
+		
+		String countKey = statsKeyBase + "_c";
+		String speedKey = statsKeyBase + "_s";
+		
+		Map<String,String> counts = jedisStats.hgetAll(countKey);
+		Map<String,String> speeds = jedisStats.hgetAll(speedKey);
+		
+		Application.jedisPool.returnResource(jedisStats);
+
+		HashMap<Long,Double> edgeSpeeds = new HashMap<Long,Double>();
+		
+		for(String k : counts.keySet()) {
+	
+			Long edgeId = Long.parseLong(k);
+			Long count = Long.parseLong(counts.get(k));
+			
+			Long speed = Long.parseLong(speeds.get(k));
+			
+			edgeSpeeds.put(edgeId, ((speed / 100.0) / count));
+		}
+
+		return edgeSpeeds;
 	}
 
-	
-	
+	public Double getGraphSpeedSum(Date d) {
+		
+		Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(d.getTime());
+        
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+		
+		Jedis jedisStats = Application.jedisPool.getResource();
+		
+		String statsKeyBase = year + "_" + month + "_" + day + "_" + hour;
+		
+		String countKey = statsKeyBase + "_c";
+		String speedKey = statsKeyBase + "_s";
+		
+		Map<String,String> counts = jedisStats.hgetAll(countKey);
+		Map<String,String> speeds = jedisStats.hgetAll(speedKey);
+		
+		Application.jedisPool.returnResource(jedisStats);
+		
+		Double speed = null;
+		
+		HashMap<Long,Long> edgeCounts = new HashMap<Long,Long>();
+		HashMap<Long,Double> edgeSpeeds = new HashMap<Long,Double>();
+		
+		for(String k : counts.keySet()) {
+			
+			Long edgeId = Long.parseLong(k);
+			String v = counts.get(k);
+			
+			if(k != null && !k.isEmpty() && v != null && v.isEmpty()) {
+				
+				Long count = Long.parseLong(v);
+				
+				if(!edgeCounts.containsKey(edgeId))
+					edgeCounts.put(edgeId, 0l);
+					
+				edgeCounts.put(edgeId, edgeCounts.get(edgeId) + count);				
+				
+			}
+		}
+		
+		for(String k : speeds.keySet()) {
+			
+			String v = speeds.get(k);
+			
+			if(k != null && !k.isEmpty() && v != null && v.isEmpty()) {
+				Long edgeId = Long.parseLong(k);
+				Double speedTotal = (Long.parseLong(v) / 100.0);
+				
+				if(!edgeSpeeds.containsKey(edgeId))
+					edgeSpeeds.put(edgeId, 0.0);
+					
+				edgeSpeeds.put(edgeId, (edgeCounts.get(edgeId) + speedTotal));				
+				
+			}
+		}
+		
+		return speed;
+	}
 	
 	public Long getVehicleId(String imei) {
 		if(!vehicleIds.containsKey(imei))
@@ -288,6 +499,10 @@ public class TrafficGraph {
 			vehicleUpdateLock.put(vehicleId, new Long(0l));
 		
 		return vehicleUpdateLock.get(vehicleId);
+	}
+	
+	public Integer getVehicleCount() {
+		return this.vehicles.size();
 	}
 	
 	public void updateVehicle(Long vehicleId, VehicleObservation observation) {

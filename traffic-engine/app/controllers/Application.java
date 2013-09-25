@@ -4,6 +4,7 @@ import play.*;
 import play.mvc.*;
 import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import util.GeoUtils;
 import util.MapEventData;
 import util.MapListener;
@@ -44,6 +45,7 @@ public class Application extends Controller {
 	
 	public static MapListener mapListeners = new MapListener();
 	
+	public static JedisPool jedisPool = new JedisPool("localhost");
 
 	public static void loadCsv(File csvFile) throws IOException {
 		
@@ -154,7 +156,7 @@ public class Application extends Controller {
 		br.close();
 
 
-        ok();
+		data();
     }
 
 	public static void index() {
@@ -163,9 +165,29 @@ public class Application extends Controller {
 		 
 	}
 	
+	public static void cumulativeEdgeSpeeds(String edgeIds, Integer minHour, Integer maxHour){
+		
+		Map<Long,Double> edgeMap = graph.getCumulativeGraphSpeed(minHour, maxHour);
+		
+		if(edgeIds != null && !edgeIds.isEmpty()){
+			String[] ids = edgeIds.split(",");
+			
+			Map<Long,Double> edgeMapSubset = new HashMap<Long,Double>();
+			
+			for(String id : ids) {
+				Long edgeId = Long.parseLong(id);
+				edgeMapSubset.put(edgeId, edgeMap.get(edgeId));
+			}
+			
+			renderJSON(edgeMapSubset);
+		}
+		else
+			renderJSON(edgeMap);
+	}
+	
 	public static void data() {
 		
-		Jedis jedis = new Jedis("localhost");
+		Jedis jedis = jedisPool.getResource();
 		
 		Long unprocessedLocationUpdates = jedis.llen("queue");
 		
@@ -175,8 +197,20 @@ public class Application extends Controller {
 		
 		String processingRate = jedis.get("processingRate");
 		
-		render(unprocessedLocationUpdates, totalLocationUpdates, processingRate);
-		 
+		Long totalObservations = 0l;
+		if(jedis.get("totalObservations") != null) 
+			totalObservations = Long.parseLong(jedis.get("totalObservations"));
+		
+		Integer vehicleCount = graph.getVehicleCount();
+		
+		Double observationsPerUpdate = 0.0;
+		
+		if(totalLocationUpdates != 0l)
+			observationsPerUpdate = (double) (totalObservations / totalLocationUpdates);
+		
+		render(unprocessedLocationUpdates, totalLocationUpdates, processingRate, totalObservations, vehicleCount, observationsPerUpdate);
+		
+		jedisPool.returnResource(jedis);
 	}
 	
 	public static void simulator() {

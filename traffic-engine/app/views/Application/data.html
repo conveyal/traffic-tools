@@ -1,0 +1,63 @@
+#{extends 'main.html' /}
+
+#{set page:'data' /}
+
+<div class="row" style="padding-top: 20px;">
+	<div class="span10 offset2">
+		<div class="row">
+			<div class="span10"><h4>Stats<h4></div>
+		</div>
+		<div class="row">
+		  <div class="span4 text-right">Unprocessed Messages:</div>
+		  <div class="span6"><strong>${unprocessedLocationUpdates}</strong></div>
+		</div>
+
+		<div class="row">
+		  <div class="span4 text-right">Total Location Updates:</div>
+		  <div class="span6"><strong>${totalLocationUpdates}</strong></div>
+		</div>	
+
+		<div class="row">
+		  <div class="span4 text-right">Processing rate:</div>
+		  <div class="span6"><strong>${processingRate
+
+		  }</strong> location updates/sec.</div>
+		</div>
+
+		<div class="row">
+		  <div class="span4 text-right">Total Vehicles Tracked:</div>
+		  <div class="span6"><strong>${vehicleCount}</strong></div>
+		</div>
+
+		<div class="row">
+		  <div class="span4 text-right">Total Velocity Obsevations:</div>
+		  <div class="span6"><strong>${totalObservations}</strong></div>
+		</div>
+
+		<div class="row">
+		  <div class="span4 text-right">Observations per Location Update:</div>
+		  <div class="span6"><strong>${observationsPerUpdate}</strong></div>
+		</div>
+	</div>
+</div>
+
+<div class="row" style="padding-top: 20px;">
+	<div class="span10 offset2">
+		<h4>Upload CSV data set<h4>
+			<form action="@{application.loadCsv()}" enctype="multipart/form-data" method="POST">
+				<input type="file" name="csvFile"/> 
+				<button type="submit" class="btn">Upload</button>
+			</form>
+	</div>
+</div>
+
+ 
+
+ 
+
+ 
+
+
+
+
+

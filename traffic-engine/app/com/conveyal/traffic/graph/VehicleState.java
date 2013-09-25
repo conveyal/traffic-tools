@@ -282,14 +282,11 @@ public class VehicleState {
 			if(averageSpeed > 50.0)
 				Logger.warn("Average Speed exceeds 50 m/s");
 			else {
-				Calendar calendar = Calendar.getInstance();
-		        calendar.setTimeInMillis(tet1.getTlc2().getTimeAtCrossing());
+				Date d = new Date(tet1.getTlc2().getTimeAtCrossing());
 		        
-		        int day = calendar.get(Calendar.DAY_OF_WEEK);
-		        int hour = calendar.get(Calendar.HOUR_OF_DAY);
-		        
-				graph.updateEdgeSpeed(tet1.getParentEdge().getId(), day,  hour, averageSpeed);
-				graph.updateEdgeSpeed(tet2.getParentEdge().getId(), day,  hour, averageSpeed);
+				graph.updateEdgeSpeed(tet1.getParentEdge().getId(), d, averageSpeed);
+				graph.updateEdgeSpeed(tet2.getParentEdge().getId(), d, averageSpeed);
+				
 			}
 			
 			

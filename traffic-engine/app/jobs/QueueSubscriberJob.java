@@ -35,6 +35,8 @@ public class QueueSubscriberJob extends Job {
 	    		
 	    		byte[] queueVal = jedis.lpop("queue".getBytes());
 	    		
+	    		
+	    		
 	    		// wait for data if queue is empty
 	    		if(queueVal == null) {
 	    		
@@ -55,13 +57,15 @@ public class QueueSubscriberJob extends Job {
 	    		}
 	    		
 	    		Long elapsedMs = (new Date().getTime() - lastStatsUpdate.getTime());
-	    		if(elapsedMs > 1000 * 10) {
+	    		if(elapsedMs > 1000) {
 	    			
 	    			Long currentTotalLocationUpdates = 0l;
 	    			if(jedisStats.get("totalLocationUpdates".getBytes()) != null) 
 	    				currentTotalLocationUpdates = Long.parseLong(jedisStats.get("totalLocationUpdates"));
 	    			
-	    			Double  processingRate =  ((double)(currentTotalLocationUpdates - (double)lastTotalLocationUpdates) / 10);
+	    			Double  processingRate =  ((double)(currentTotalLocationUpdates - (double)lastTotalLocationUpdates));
+	    			
+	    			lastTotalLocationUpdates = currentTotalLocationUpdates;	 	 	
 	    			
 	    			jedisStats.set("processingRate",processingRate.toString());
 	    		}
@@ -69,6 +73,7 @@ public class QueueSubscriberJob extends Job {
     	}
     	finally {
     		jedis.disconnect();
+    		jedisStats.disconnect();
     	}
     }
 }
