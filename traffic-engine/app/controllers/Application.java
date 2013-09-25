@@ -32,6 +32,7 @@ import org.springframework.context.support.GenericApplicationContext;
 
 import com.conveyal.traffic.graph.MovementEdge;
 import com.conveyal.traffic.graph.TrafficGraph;
+import com.conveyal.traffic.graph.TrafficStats;
 import com.conveyal.traffic.graph.VehicleObservation;
 import com.conveyal.traffic.graph.VehicleState;
 import com.typesafe.config.ConfigFactory;
@@ -167,22 +168,22 @@ public class Application extends Controller {
 	
 	public static void cumulativeEdgeSpeeds(String edgeIds, Integer minHour, Integer maxHour){
 		
-		Map<Long,Double> edgeMap = graph.getCumulativeGraphSpeed(minHour, maxHour);
+		HashSet<Long> filteredEdges = null;
 		
-		if(edgeIds != null && !edgeIds.isEmpty()){
+		if(edgeIds != null) {
 			String[] ids = edgeIds.split(",");
 			
-			Map<Long,Double> edgeMapSubset = new HashMap<Long,Double>();
-			
-			for(String id : ids) {
-				Long edgeId = Long.parseLong(id);
-				edgeMapSubset.put(edgeId, edgeMap.get(edgeId));
+			if(ids.length > 0) {
+				filteredEdges = new HashSet<Long>();
+				for(String id : ids) {
+					filteredEdges.add(Long.parseLong(id));
+				}
 			}
-			
-			renderJSON(edgeMapSubset);
 		}
-		else
-			renderJSON(edgeMap);
+		
+		TrafficStats stats = new TrafficStats(null, null, null, minHour, maxHour, filteredEdges);
+		
+		renderJSON(stats.getEdgeSpeeds(null));
 	}
 	
 	public static void data() {

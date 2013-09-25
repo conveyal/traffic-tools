@@ -284,9 +284,8 @@ public class VehicleState {
 			else {
 				Date d = new Date(tet1.getTlc2().getTimeAtCrossing());
 		        
-				graph.updateEdgeSpeed(tet1.getParentEdge().getId(), d, averageSpeed);
-				graph.updateEdgeSpeed(tet2.getParentEdge().getId(), d, averageSpeed);
-				
+				TrafficStats.updateEdgeStats(tet1.getParentEdge().getId(), d, averageSpeed);
+				TrafficStats.updateEdgeStats(tet2.getParentEdge().getId(), d, averageSpeed);
 			}
 			
 			
