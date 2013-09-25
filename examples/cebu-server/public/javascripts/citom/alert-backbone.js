@@ -628,27 +628,31 @@ var AlertMapView = Backbone.View.extend({
       }
 
     
-     // Base layer config is optional, default to Mapbox Streets
-      var url = 'http://{s}.tiles.mapbox.com/v3/conveyal.map-jc4m5i21/{z}/{x}/{y}.png';
-          baseLayer = L.tileLayer(url, {
-            attribution: '&copy; OpenStreetMap contributors, CC-BY-SA. <a href="http://mapbox.com/about/maps" target="_blank">Terms &amp; Feedback</a>' 
-          });
-
-      // Init the map
-      this.map = L.map($('#map').get(0), {
-        center: [10.31741, 123.894], //TODO: add to the config file for now
-        zoom: 15,
-        maxZoom: 17
-      });
-
-      this.map.addLayer(baseLayer);
-
-      // Remove default prefix
-      this.map.attributionControl.setPrefix('');
-
-      this.map.on('contextmenu', this.addIncident, this);
-
-      // Add a layer group for taxis
+      if(!opts.map) {
+	     // Base layer config is optional, default to Mapbox Streets
+	      var url = 'http://{s}.tiles.mapbox.com/v3/conveyal.map-jc4m5i21/{z}/{x}/{y}.png';
+	          baseLayer = L.tileLayer(url, {
+	            attribution: '&copy; OpenStreetMap contributors, CC-BY-SA. <a href="http://mapbox.com/about/maps" target="_blank">Terms &amp; Feedback</a>' 
+	          });
+	
+	      // Init the map
+	      this.map = L.map($('#map').get(0), {
+	        center: [10.31741, 123.894], //TODO: add to the config file for now
+	        zoom: 15,
+	        maxZoom: 17
+	      });
+	
+	      this.map.addLayer(baseLayer);
+	
+	      // Remove default prefix
+	      this.map.attributionControl.setPrefix('');
+	
+	      this.map.on('contextmenu', this.addIncident, this);
+      }
+      else 
+    	  this.map = opts.map;
+      
+      // Add a layer group for alerts
       this.alertLayerGroup = L.layerGroup().addTo(this.map);
 
       if(!this.publicOnly) {
@@ -664,6 +668,16 @@ var AlertMapView = Backbone.View.extend({
       _.bindAll(this, 'openPopup', 'addIncident');
 
 
+    },
+    
+    show : function() {
+    	if(!this.map.hasLayer(this.alertLayerGroup))
+    		this.map.addLayer(this.alertLayerGroup);
+    },
+    
+    hide : function() {
+    	if(this.map.hasLayer(this.alertLayerGroup))
+    		this.map.removeLayer(this.alertLayerGroup);
     },
 
     startTimer: function() {

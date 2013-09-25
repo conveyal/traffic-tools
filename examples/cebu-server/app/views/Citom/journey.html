@@ -48,46 +48,44 @@ New message:
 		<h2 id="journeyDistance">--</h2>km
 		</div>
 		
-		<div style="margin-left: 100px;">
+		<div style="margin-left: 90px;">
 		<h2 id="avgSpeed">--</h2>km/h
 		</div>
 		
 		<hr style="margin: 5px 0;">
 		
 		<strong>Historical Data</strong>	
-		<br/>	
-
-		<select onchange="compare();" id="hours" style="width: 120px">
-			<option value="7,8,9,10">AM Peak</option>
-			<option value="11,12,13,14,15">Interpeak</option>
-			<option value="16,17,18,19,20">PM Peak</option>
-			<option value="24,1,2,3,4">Night</option>
-		</select> 
-
-		<select onchange="compare();" id="days" style="width: 120px">
-			<option value="2,3,4,5,6">Weekday</option>
-			<option value="1,7">Weekend</option>
-		</select> 
-
-		<!-- <select onchange="compare();" id="compareWith" style="width: 120px"><option value="--">--</option><option>Last Hour</option><option>Last 12 Hours</option><option>Last 24 Hours</option><option value="custom">Custom</option></select> 
+		<br/>
 		
-		<div id="customCompare1">
-			<input style="width: 100px;" type="text" value="12-24-2012" id="datepicker1">
+		<span style="float: right;">0 observations</span>	 
+		<p>Compare:</p>
 		
-			<div style="width: 200px;">Time: <span id="timerange1"></span>
-				<div id="slider-range1"></div>
-			</div>
-		</div>
-		<div style="width: 100px; margin-top: 10px; margin-bottom: 10px;"><strong> -- against -- </strong></div>
-		<select onchange="compare();" id="compareAgainst" style="width: 120px"><option value="--">--</option><option>Yesterday</option><option>Last Week</option><option value="custom">Custom</option></select>
-	
-		<div id="customCompare2">
-			<input style="width: 100px;" type="text" value="12-24-2012" id="datepicker2">
+		<select id="compareSelect"><option value="ALL">All available dates</option><option value="WEEKDAY">Weekdays</option><option value="WEEKEND">Weekends</option><option value="CUSTOM">Custom date range</option></select> 
 		
-			<div style="width: 200px;">Time: <span id="timerange2"></span>
-				<div id="slider-range2"></div>
-			</div>
+		<div id="compareDates">
+			<input style="width: 100px;" placeholder="from (mm/dd/yyy)" type="text"id="compareFromDatePicker">
+			<input style="width: 100px;" placeholder="to (mm/dd/yyy)" type="text"id="compareToDatePicker">
 		</div> 
+		
+		<div style="width: 190px; margin-left: 10px;">Hour range: <span id="compareHourRange"></span>
+				<div id="compareSlider"></div>
+		</div>
+		
+		<span style="float: right; margin: 10px 0;">0 observations</span>
+		<p style="margin: 10px 0;">Against:</p>
+		
+		<select id="againstSelect"><option value="ALL">All available dates</option><option value="WEEKDAY">Weekdays</option><option value="WEEKEND">Weekends</option><option value="CUSTOM">Custom date range</option></select> 
+		
+		<div id="againstDates">
+			<input style="width: 100px;" placeholder="from (mm/dd/yyy)" type="text"id="againstFromDatePicker">
+			<input style="width: 100px;" placeholder="to (mm/dd/yyy)" type="text"id="againstToDatePicker">
+		</div> 
+		
+		<div style="width: 190px; margin-left: 10px;">Hour range: <span id="againstHourRange"></span>
+				<div id="againstSlider"></div>
+		</div>
+		
+		 
 		<br/>
 		<div style="float: right; margin-left: 10px;">
 		<h3 id="journeyTimeDelta">--</h2>mins</div>
@@ -99,7 +97,7 @@ New message:
 		<div style="margin-left: 100px;">
 		<h3 id="avgSpeedDelta">--</h2>km/h
 		</div>
-		<span style="float: right;">Comparison data unavailable.</span>-->
+		
 		<br/>
 		<br/>
 		<strong>Saved Journeys</strong> 
@@ -122,21 +120,8 @@ New message:
 				
 		<hr style="margin: 5px 0;">
 		
-		<div class="btn-group pull-right " data-toggle-name="is_private" data-toggle="buttons-radio">
- 			<button type="button" value="0" class="btn disabled" data-toggle="button">Relative</button>
- 			<button type="button" value="1" class="btn disabled" data-toggle="button">Absolute</button>
-		</div>
 		<br clear="all"/>
 		
-		<hr style="margin: 5px 0;">
-		
-		<strong>Current Conditions</strong> <input type="checkbox"/ id="currentConditions" onclick="currentConditions();"> <!-- <a href="#" style="float: right;">Generate Report</a>  -->
-		
-		<table>
-			<tr><td style="background-color: red;">&nbsp;</td><td>&nbsp;&lt; 25km/h</td></tr>
-			<tr><td style="background-color: yellow;">&nbsp;</td><td>&nbsp;25-35km/h</td></tr>
-			<tr><td style="background-color: green;">&nbsp;</td><td>&nbsp;&gt; 35km/h</td></tr>
-		</table>
 		
 		</div>
 
@@ -176,6 +161,6 @@ New message:
   </div>
 </div>
 
-<script src="@{'/public/javascripts/jquery-ui-1.8.23.custom.min.js'}"></script>
+<script src="@{'/public/javascripts/jquery-ui.js'}"></script>
 <script src="@{'/public/bootstrap/js/bootstrap-datepicker.js'}"></script>
 <script src="@{'/public/javascripts/cebu_journey.js'}"></script>

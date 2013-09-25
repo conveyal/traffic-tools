@@ -717,8 +717,8 @@ public class Api extends Controller {
 
 		    	HashMap<BigInteger,Double> streetVelocities = null;
 
-		    	if(hours != null && days != null)
-		    		streetVelocities = StatsEdge.getEdgeVelocityForHoursDays(hours, days, org.apache.commons.lang.StringUtils.join(edgeIds, ","));
+		    	//if(hours != null && days != null)
+		    	//	streetVelocities = StatsEdge.getEdgeVelocityForHoursDays(hours, days, org.apache.commons.lang.StringUtils.join(edgeIds, ","));
 		    	
 	    	    for(Integer edgeId : edgeIds)
 	    	    {  		
@@ -731,13 +731,13 @@ public class Api extends Controller {
 	    	    	
 	    	    	org.opentripplanner.util.model.EncodedPolylineBean polylineBean =  PolylineEncoder.createEncodings(geom);
 
-	    	    	if(streetVelocities != null) {
+	    	    	/*if(streetVelocities != null) {
 	    	    		Double s = streetVelocities.get(BigInteger.valueOf(edgeId.longValue()));
 	    	    		if(s != null)
 	    	    			total += s * edge.geLength();
 	    	    	}	
 	    	    	else    	    
-	    	    		total += Api.edgeVelocities.getStreetVelocity( BigInteger.valueOf(edgeId.longValue())) * edge.geLength();
+	    	    		total += Api.edgeVelocities.getStreetVelocity( BigInteger.valueOf(edgeId.longValue())) * edge.geLength(); */
 	    	    	
 	    	    	path.edgeGeoms.add(polylineBean.getPoints());
 	    	    }

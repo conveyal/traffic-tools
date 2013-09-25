@@ -122,7 +122,6 @@
 	<classpathentry kind="lib" path="/opt/play-1.2.5/framework/lib/commons-email-1.2.jar"/>
 	<classpathentry kind="lib" path="/opt/play-1.2.5/framework/lib/org.eclipse.jdt.core-3.7.1.v_B76_R37x.jar"/>
 	<classpathentry kind="lib" path="/opt/play-1.2.5/framework/lib/jaxen-1.1.jar"/>
-	<classpathentry kind="lib" path="/opt/play-1.2.5/framework/lib/netty-3.4.2.Final.jar"/>
 	<classpathentry kind="lib" path="/opt/play-1.2.5/framework/lib/commons-collections-3.1.jar"/>
 	<classpathentry kind="lib" path="/opt/play-1.2.5/framework/lib/async-http-client-1.7.4.jar"/>
 	<classpathentry kind="lib" path="/opt/play-1.2.5/framework/lib/xmlpull-1.1.3.1.jar"/>

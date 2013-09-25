@@ -252,42 +252,38 @@ function currentConditions()
 
 function compare()
 {
-	//if($('#compareWith').val() != '--' && $('#compareAgainst').val() != '--')
-	//	$('#dataNotAvailable').show();
-	//else
-	//	$('#dataNotAvailable').hide();
-	
-	if($('#compareWith').val() == 'custom')
-		$('#customCompare1').show();
+	if($('#compareSelect').val() == 'CUSTOM')
+		$('#compareDates').show();
 	else
-		$('#customCompare1').hide();
+		$('#compareDates').hide();
 	
-	if($('#compareAgainst').val() == 'custom')
-		$('#customCompare2').show();
+	if($('#againstSelect').val() == 'CUSTOM')
+		$('#againstDates').show();
 	else
-		$('#customCompare2').hide();
+		$('#againstDates').hide();
 }
 
 $(document).ready(function() {
 	
 	overlay = L.tileLayer(overlayUrl, mbOptions);
 	
-	$( "#slider-range1" ).slider({
+	$( "#compareSlider" ).slider({
         range: true,
         min: 0,
         max: 23,
         values: [ 0, 23 ],
         slide: function( event, ui ) {
-            $("#timerange1").html( "" + ui.values[ 0 ] + "hr - " + ui.values[ 1 ] + 'hr');
+            $("#compareHourRange").html( "" + ui.values[ 0 ] + "hr - " + ui.values[ 1 ] + 'hr');
         }
     });
-	$( "#slider-range2" ).slider({
+	
+	$( "#againstSlider" ).slider({
         range: true,
         min: 0,
         max: 23,
         values: [ 0, 23 ],
         slide: function( event, ui ) {
-            $("#timerange2").html( "" + ui.values[ 0 ] + "hr - " + ui.values[ 1 ] + 'hr');
+            $("#againstHourRange").html( "" + ui.values[ 0 ] + "hr - " + ui.values[ 1 ] + 'hr');
         }
     });
 	
@@ -296,14 +292,20 @@ $(document).ready(function() {
 	$('#hours').on('change', loadPath);
 	$('#days').on('change', loadPath);
 	
-	$('#customCompare1').hide();
-	$('#customCompare2').hide();
+	$('#compareSelect').on('change', compare);
+	$('#againstSelect').on('change', compare);
+	
+	$('#compareDates').hide();
+	$('#againstDates').hide();
 	
 	$('#saveButton').hide();
 	
 	$('#dataNotAvailable').hide();
-	$('#datepicker1').datepicker()
-	$('#datepicker2').datepicker()
+	
+	$('#compareFromDatePicker').datepicker();
+	$('#compareToDatePicker').datepicker();
+	$('#againstFromDatePicker').datepicker()
+	$('#againstToDatePicker').datepicker()
 	
 	map = new L.map('map').setView(defaultLatLon, 13);
 
