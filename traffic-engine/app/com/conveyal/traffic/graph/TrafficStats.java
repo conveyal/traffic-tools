@@ -22,7 +22,7 @@ public class TrafficStats {
 	
 	HashSet<Long> edgeIds;
 	
-	public TrafficStats(Date fromDate, Date toDate, List<Integer> daysOfWeek, Integer fromHour, Integer toHour, HashSet<Long> edgeIds) {
+	public TrafficStats(Date fromDate, Date toDate, HashSet<Integer> daysOfWeek, Integer fromHour, Integer toHour, HashSet<Long> edgeIds) {
 				
 		this.edgeIds = edgeIds;
 		
@@ -173,8 +173,12 @@ public class TrafficStats {
 		
 		Long total = 0l;
 		
-		for(Long count : this.edgeCounts.values()) {
-			total += count;
+		for(Long edgeId : this.edgeCounts.keySet()) {
+			
+			if(edgeIds != null && !edgeIds.contains(edgeId))
+				continue;
+			else
+				total += edgeCounts.get(edgeId);
 		}
 		
 		return total;
@@ -195,10 +199,12 @@ public class TrafficStats {
 			
 		for(Long id : selectedEdgeIds) {
 			
-			Double speed = edgeSpeedTotals.get(id);
-			Long count = edgeCounts.get(id);
-			
-			speeds.put(id, (speed / count));
+			if(edgeSpeedTotals.containsKey(id)) {
+				Double speed = edgeSpeedTotals.get(id);
+				Long count = edgeCounts.get(id);
+				
+				speeds.put(id, (speed / count));	
+			}
 		}
 		
 		return speeds;

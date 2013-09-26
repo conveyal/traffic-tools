@@ -9,6 +9,7 @@ import util.GeoUtils;
 import util.MapEventData;
 import util.MapListener;
 import util.ProjectedCoordinate;
+import util.TrafficStatsResponse;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -166,7 +167,13 @@ public class Application extends Controller {
 		 
 	}
 	
-	public static void cumulativeEdgeSpeeds(String edgeIds, Integer minHour, Integer maxHour){
+	public static void trafficStats(String edgeIds, String daysOfWeek, Long fromDate, Long toDate, Integer minHour, Integer maxHour){
+		
+		Http.Header hd = new Http.Header();
+    	
+    	hd.name = "Access-Control-Allow-Origin";
+    	hd.values = new ArrayList<String>();
+    	hd.values.add("*");
 		
 		HashSet<Long> filteredEdges = null;
 		
@@ -181,9 +188,37 @@ public class Application extends Controller {
 			}
 		}
 		
-		TrafficStats stats = new TrafficStats(null, null, null, minHour, maxHour, filteredEdges);
+		HashSet<Integer> days = null;
 		
-		renderJSON(stats.getEdgeSpeeds(null));
+		if(daysOfWeek != null) {
+			String[] dayArray = daysOfWeek.split(",");
+			
+			if(dayArray.length > 0) {
+				filteredEdges = new HashSet<Long>();
+				for(String day : dayArray) {
+					days.add(Integer.parseInt(day));
+				}
+			}
+		}
+		
+		Date from = null;
+		
+		if(fromDate != null) 
+			from = new Date(fromDate);
+		
+		Date to = null;
+		
+		if(toDate != null) 
+			to = new Date(toDate);
+			
+		TrafficStats stats = new TrafficStats(from, to, days, minHour, maxHour, filteredEdges);
+		
+		TrafficStatsResponse response = new TrafficStatsResponse();
+		
+		response.edges = stats.getEdgeSpeeds(null);
+		response.totalObservations = stats.getTotalObservations();
+		
+		renderJSON(response);
 	}
 	
 	public static void data() {
