@@ -243,7 +243,7 @@ function loadPath()
 function loadStats()
 {
 	$.get('/api/trafficStats', {edgeIds: pathEdges}, function(data) {
-		alert(data);
+		
 	});
 	
 }
