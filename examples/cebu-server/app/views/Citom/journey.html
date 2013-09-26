@@ -54,50 +54,76 @@ New message:
 		
 		<hr style="margin: 5px 0;">
 		
+		
+		<span style="float: right;"><span id="compareObserverations'">0</span> observations</span>	 
 		<strong>Historical Data</strong>	
-		<br/>
 		
-		<span style="float: right;">0 observations</span>	 
-		<p>Compare:</p>
 		
-		<select id="compareSelect"><option value="ALL">All available dates</option><option value="WEEKDAY">Weekdays</option><option value="WEEKEND">Weekends</option><option value="CUSTOM">Custom date range</option></select> 
+		
+		<select id="compareSelect" style="margin-top: 10px;"><option value="ALL">All available dates</option><option value="CUSTOM">Custom date range</option></select> 
 		
 		<div id="compareDates">
 			<input style="width: 100px;" placeholder="from (mm/dd/yyy)" type="text"id="compareFromDatePicker">
 			<input style="width: 100px;" placeholder="to (mm/dd/yyy)" type="text"id="compareToDatePicker">
 		</div> 
 		
-		<div style="width: 190px; margin-left: 10px;">Hour range: <span id="compareHourRange"></span>
+		<div>Days of week: <br/>
+			<input type="checkbox" id="compareMonday" checked/>M 
+			<input type="checkbox" id="compareTuesday" checked/>Tu 
+			<input type="checkbox" id="compareWednesday" checked/>W 
+			<input type="checkbox" id="compareThursday" checked/>Th 
+			<input type="checkbox" id="compareFriday" checked/>F 
+			<input type="checkbox" id="compareSaturday" checked/>Sa 
+			<input type="checkbox" id="compareSunday" checked/>Su
+		</div>
+		
+		
+		
+		<div style="width: 190px; margin-top: 10px; margin-left: 5px;">Hour range: <span id="compareHourRange"></span>
 				<div id="compareSlider"></div>
 		</div>
 		
-		<span style="float: right; margin: 10px 0;">0 observations</span>
-		<p style="margin: 10px 0;">Against:</p>
+		<span style="float: right; margin: 20px 0;"><span id="againstObserverations'">0</span> observations</span>
+		<p style="margin: 20px 0;"><input id="compareAgainst" type="checkbox"/> <strong>Compare</strong></p>
 		
-		<select id="againstSelect"><option value="ALL">All available dates</option><option value="WEEKDAY">Weekdays</option><option value="WEEKEND">Weekends</option><option value="CUSTOM">Custom date range</option></select> 
+		<div id="comparisonView">
 		
-		<div id="againstDates">
-			<input style="width: 100px;" placeholder="from (mm/dd/yyy)" type="text"id="againstFromDatePicker">
-			<input style="width: 100px;" placeholder="to (mm/dd/yyy)" type="text"id="againstToDatePicker">
-		</div> 
-		
-		<div style="width: 190px; margin-left: 10px;">Hour range: <span id="againstHourRange"></span>
-				<div id="againstSlider"></div>
-		</div>
-		
+		<select id="againstSelect"><option value="ALL">All available dates</option><option value="CUSTOM">Custom date range</option></select> 
 		 
-		<br/>
-		<div style="float: right; margin-left: 10px;">
-		<h3 id="journeyTimeDelta">--</h2>mins</div>
-	
-		<div style="float: left; margin-left: 10px;">
-		<h3 id="journeyDistance">Change:</h3>
-		</div>
-	
-		<div style="margin-left: 100px;">
-		<h3 id="avgSpeedDelta">--</h2>km/h
-		</div>
+			<div id="againstDates">
+				<input style="width: 100px;" placeholder="from (mm/dd/yyy)" type="text"id="againstFromDatePicker">
+				<input style="width: 100px;" placeholder="to (mm/dd/yyy)" type="text"id="againstToDatePicker">
+			</div> 
+			
+			<div>Days of week: <br/>
+				<input type="checkbox" id="againstMonday" checked/>M 
+				<input type="checkbox" id="againstTuesday" checked/>Tu 
+				<input type="checkbox" id="againstWednesday" checked/>W 
+				<input type="checkbox" id="againstThursday" checked/>Th 
+				<input type="checkbox" id="againstFriday" checked/>F 
+				<input type="checkbox" id="againstSaturday" checked/>Sa 
+				<input type="checkbox" id="againstSunday" checked/>Su
+			</div>
+			
+			
+			
+			<div style="width: 190px; margin-top: 10px; margin-left: 5px;">Hour range: <span id="againstHourRange"></span>
+					<div id="againstSlider"></div>
+			</div>
+			
+			 
+			<br/>
+			<div style="float: right; margin-left: 10px;">
+			<h3 id="journeyTimeDelta">--</h2>mins</div>
 		
+			<div style="float: left; margin-left: 10px;">
+			<h4 id="journeyDistance">Change:</h4>
+			</div>
+		
+			<div style="margin-left: 100px;">
+			<h3 id="avgSpeedDelta">--</h2>km/h
+			</div>
+		</div>
 		<br/>
 		<br/>
 		<strong>Saved Journeys</strong> 

@@ -8,6 +8,8 @@ import utils.DistanceCache;
 import utils.EncodedPolylineBean;
 import utils.Observation;
 import utils.StreetVelocityCache;
+import utils.TrafficStats;
+import utils.TrafficStatsResponse;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
@@ -33,7 +35,6 @@ import org.opentripplanner.routing.graph.Vertex;
 import org.opentripplanner.routing.impl.StreetVertexIndexServiceImpl;
 import org.opentripplanner.routing.spt.GraphPath;
 import org.opentripplanner.util.PolylineEncoder;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -61,9 +62,7 @@ import com.google.gson.GsonBuilder;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 
-
 import jobs.ObservationHandler;
-
 import models.*;
 
 public class Api extends Controller {
@@ -700,10 +699,10 @@ public class Api extends Controller {
     	
     	renderJSON(gson.toJson(updates));
     }
-    
-   public static void path(String lat1, String lon1, String lat2, String lon2, String hours, String days)
-    		throws JsonGenerationException, JsonMappingException,
-    	      IOException {
+   
+    public static void path(String lat1, String lon1, String lat2, String lon2)
+		   throws JsonGenerationException, JsonMappingException, IOException 
+	{
 	    	    final Coordinate coord1 =
 	    	        new Coordinate(Double.parseDouble(lon1), Double.parseDouble(lat1));
 	    	    final Coordinate coord2 =
@@ -712,41 +711,75 @@ public class Api extends Controller {
 	    	    Path path = new Path();
 	    	    
 	    	    List<Integer> edgeIds = Api.graph.getEdgesBetweenPoints(coord1, coord2);
-		
-		    	Double total = 0.0;
-
-		    	HashMap<BigInteger,Double> streetVelocities = null;
-
-		    	//if(hours != null && days != null)
-		    	//	streetVelocities = StatsEdge.getEdgeVelocityForHoursDays(hours, days, org.apache.commons.lang.StringUtils.join(edgeIds, ","));
+	
+		    	path.distance = 0.0;
 		    	
 	    	    for(Integer edgeId : edgeIds)
 	    	    {  		
 	    	    	TrafficEdge edge = Api.graph.getTrafficEdge(edgeId);
 	    	    	Geometry geom = edge.getGeometry();
 	    	    	
-	    	    	path.distance += edge.geLength();
-	    	    	
-	    	    	path.edgeIds = edgeIds;
-	    	    	
 	    	    	org.opentripplanner.util.model.EncodedPolylineBean polylineBean =  PolylineEncoder.createEncodings(geom);
-
-	    	    	/*if(streetVelocities != null) {
-	    	    		Double s = streetVelocities.get(BigInteger.valueOf(edgeId.longValue()));
-	    	    		if(s != null)
-	    	    			total += s * edge.geLength();
-	    	    	}	
-	    	    	else    	    
-	    	    		total += Api.edgeVelocities.getStreetVelocity( BigInteger.valueOf(edgeId.longValue())) * edge.geLength(); */
 	    	    	
-	    	    	path.edgeGeoms.add(polylineBean.getPoints());
-	    	    }
+	    	    	path.addEdge(edgeId, edge.geLength(), polylineBean.getPoints());
+	    	    	
+	    	    	path.distance += edge.geLength();
+	      	    }
 	    	    
-	    	    path.minSpeed = total / path.distance;
-	    	    path.maxSpeed = total / path.distance;
-	    	      	   
 	    	    renderJSON(path);
-		    	    
-			   
-    	  } 
+	  } 
+    
+      public static void trafficStats(String edgeIds, String daysOfWeek, Long fromDate, Long toDate, Integer minHour, Integer maxHour){
+		
+		Http.Header hd = new Http.Header();
+    	
+    	hd.name = "Access-Control-Allow-Origin";
+    	hd.values = new ArrayList<String>();
+    	hd.values.add("*");
+		
+		HashSet<Long> filteredEdges = null;
+		
+		if(edgeIds != null) {
+			String[] ids = edgeIds.split(",");
+			
+			if(ids.length > 0) {
+				filteredEdges = new HashSet<Long>();
+				for(String id : ids) {
+					filteredEdges.add(Long.parseLong(id));
+				}
+			}
+		}
+		
+		HashSet<Integer> days = null;
+		
+		if(daysOfWeek != null) {
+			String[] dayArray = daysOfWeek.split(",");
+			
+			if(dayArray.length > 0) {
+				filteredEdges = new HashSet<Long>();
+				for(String day : dayArray) {
+					days.add(Integer.parseInt(day));
+				}
+			}
+		}
+		
+		Date from = null;
+		
+		if(fromDate != null) 
+			from = new Date(fromDate);
+		
+		Date to = null;
+		
+		if(toDate != null) 
+			to = new Date(toDate);
+			
+		TrafficStats stats = new TrafficStats(from, to, days, minHour, maxHour, filteredEdges);
+		
+		TrafficStatsResponse response = new TrafficStatsResponse();
+		
+		response.edges = stats.getEdgeSpeeds(null);
+		response.totalObservations = stats.getTotalObservations();
+		
+		renderJSON(response);
+	}
 }

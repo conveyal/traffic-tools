@@ -9,14 +9,25 @@ public class Path {
 	
 	public String title;
 	
-	public Integer minTime;
-	public Integer maxTime;
-	
-	public Double minSpeed;
-	public Double maxSpeed;
-	
 	public Double distance = 0.0;
 	
-	public List<Integer> edgeIds = new  ArrayList<Integer>();
-	public List<String> edgeGeoms = new ArrayList<String>();
+	public List<PathEdge> edges = new  ArrayList<PathEdge>();
+
+	public void addEdge(Integer edgeId, Double distance, String geom) {
+		PathEdge pe = new PathEdge();
+		
+		pe.edgeId = edgeId;
+		pe.distance = distance;
+		pe.geom = geom;
+		
+		edges.add(pe);
+	}
+	
+	public class PathEdge {
+		
+		public Integer edgeId;
+		public Double  distance;	
+		public String  geom;
+		
+	}
 }

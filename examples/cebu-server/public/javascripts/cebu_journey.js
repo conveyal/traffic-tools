@@ -99,7 +99,7 @@ $(document).ready(sizeContent);
 $(window).resize(sizeContent);
 
 
-var startMarker, endMarker, path, polyline;
+var startMarker, endMarker, path, polyline, pathEdges;
 
 function sizeContent() {
   var newHeight = $(window).height() - $("#header").height() + "px";
@@ -198,17 +198,17 @@ function loadPath()
 		
 		$('#saveButton').show();
 
-		
 		pathLayer.clearLayers();
 		
-		var speed = path.minSpeed;
-		
 		var dist = (path.distance / 1000.0);
+		$('#journeyDistance').text(dist.toFixed(2));
+		
+		/*var speed = path.minSpeed;
 		var time1 = (path.distance / speed / 60);
 		
 		$('#saveform_path').val(path.edgeIds.join(","));
 
-		$('#journeyDistance').text(dist.toFixed(2));
+		
 		
 		$('#journeyTime').text(time1.toFixed(2));
 		
@@ -219,22 +219,33 @@ function loadPath()
 		$('#saveform_speed').val((speed * 3.6).toFixed(2));
 		
 		var time2 = (path.distance / (speed + 0.5 ) / 60);
-		var timeDelta = time2 - time1;
+		var timeDelta = time2 - time1; */
 		
 		//$('#journeyTimeDelta').text('-' + timeDelta.toFixed(2));
 		
 		//$('#avgSpeedDelta').text('+' + (0.5 * 3.6).toFixed(2));
 		
-		for(segment in path.edgeGeoms)
+		var edgeIds = new Array();
+		for(edge in path.edges)
 		{
+			var polyline = new L.EncodedPolyline(path.edges[edge].geom, {color: "#00f",	weight: 7, opacity: 0.3});
 			
-			
-			var polyline = new L.EncodedPolyline(path.edgeGeoms[segment], {color: "#00f",	weight: 7, opacity: 0.3});
+			edgeIds.push(path.edges[edge].edgeId);
 			
 			polyline.addTo(pathLayer);
 		}
+		pathEdges = edgeIds.join();
 		
+		loadStats();
 	});
+}
+
+function loadStats()
+{
+	$.get('/api/trafficStats', {edgeIds: pathEdges}, function(data) {
+		alert(data);
+	});
+	
 }
 
 var overlayUrl = 'http://cebutraffic.org/tiles_avg/{z}/{x}/{y}.png';
@@ -292,11 +303,24 @@ $(document).ready(function() {
 	$('#hours').on('change', loadPath);
 	$('#days').on('change', loadPath);
 	
+	$('#compareAgainst').on('click', function(evt){
+		
+		if($('#compareAgainst').is(':checked')) {
+			$('#comparisonView').show();
+		}
+		else {
+			$('#comparisonView').hide();
+		}
+		
+	});
+	
 	$('#compareSelect').on('change', compare);
 	$('#againstSelect').on('change', compare);
 	
 	$('#compareDates').hide();
 	$('#againstDates').hide();
+	
+	$('#comparisonView').hide();
 	
 	$('#saveButton').hide();
 	
