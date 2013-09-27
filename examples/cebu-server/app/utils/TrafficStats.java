@@ -159,6 +159,11 @@ public class TrafficStats {
 		Jedis jedisStats = jedisPool.getResource();
 		
 		try {
+			if(!jedisStats.isConnected()) {
+				jedisPool.returnBrokenResource(jedisStats);
+				jedisStats = jedisPool.getResource();
+			}
+			
 			Map<String,String> counts = jedisStats.hgetAll(countKey);
 			Map<String,String> speeds = jedisStats.hgetAll(speedKey);
 			
