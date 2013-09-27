@@ -11,18 +11,31 @@ import play.mvc.Http.WebSocketFrame;
 import play.mvc.WebSocketController;
 import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+import utils.StatsPool;
 
 
 public class Ws extends WebSocketController {
-
-	static JedisPool jedisPool = new JedisPool("localhost");
+	
+	static StatsPool jedisPool = new StatsPool();
 	
 	static void processPbFrame(byte[] data, String source) {
 		try {
 			
-			BinaryJedis jedis = jedisPool.getResource();
-			jedis.rpush("queue".getBytes(), data);
-			jedisPool.returnResource(jedis);
+			BinaryJedis jedis = jedisPool.pool.getResource();
+			
+			try {
+				if(!jedis.isConnected()) {
+					jedisPool.pool.returnBrokenResource(jedis);
+					jedis = jedisPool.pool.getResource();
+				}
+				
+				jedis.rpush("queue".getBytes(), data);
+				
+			}
+			finally {
+				jedisPool.pool.returnResource(jedis);
+			}
 			
 			LocationUpdate locationUpdate = LocationUpdate.parseFrom(data);
 		  	

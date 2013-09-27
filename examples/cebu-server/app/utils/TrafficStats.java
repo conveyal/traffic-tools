@@ -17,7 +17,7 @@ import controllers.Application;
 
 public class TrafficStats {
 	
-	private static JedisPool jedisPool = new JedisPool("localhost");
+	private static StatsPool jedisPool = new StatsPool();
 	// a data model for fast storage and retrieval of summarized views of observations by edge
 	
 	private HashMap<Long,Double> edgeSpeedTotals = new HashMap<Long,Double>();
@@ -156,12 +156,12 @@ public class TrafficStats {
 		String countKey = keyBase + "_c";
 		String speedKey = keyBase + "_s";
 		
-		Jedis jedisStats = jedisPool.getResource();
+		Jedis jedisStats = jedisPool.pool.getResource();
 		
 		try {
 			if(!jedisStats.isConnected()) {
-				jedisPool.returnBrokenResource(jedisStats);
-				jedisStats = jedisPool.getResource();
+				jedisPool.pool.returnBrokenResource(jedisStats);
+				jedisStats = jedisPool.pool.getResource();
 			}
 			
 			Map<String,String> counts = jedisStats.hgetAll(countKey);
@@ -200,7 +200,7 @@ public class TrafficStats {
 			}
 		}
 		finally {
-			jedisPool.returnResource(jedisStats);
+			jedisPool.pool.returnResource(jedisStats);
 		}
 		
 		
@@ -302,7 +302,7 @@ public class TrafficStats {
 		String countKey = statsKeyBase + "_c";
 		String speedKey = statsKeyBase + "_s";
 		
-		Jedis jedisStats = jedisPool.getResource();
+		Jedis jedisStats = jedisPool.pool.getResource();
 		
 		Double speed = null;
 		
@@ -318,7 +318,7 @@ public class TrafficStats {
 		
 		}
 		finally {
-			jedisPool.returnResource(jedisStats);
+			jedisPool.pool.returnResource(jedisStats);
 		}
 		
 		return speed;
@@ -327,7 +327,7 @@ public class TrafficStats {
 	
 	public static void updateEdgeStats(Integer edgeId, Date d, Double speed) {
 		
-		Jedis jedisStats = jedisPool.getResource();
+		Jedis jedisStats = jedisPool.pool.getResource();
 		
 		try {
 			// storing stats in keys with date_yyyy_mm_dd_hh base 
@@ -384,7 +384,7 @@ public class TrafficStats {
 			
 		}
 		finally {
-			jedisPool.returnResource(jedisStats);
+			jedisPool.pool.returnResource(jedisStats);
 		}
 	}
 }
