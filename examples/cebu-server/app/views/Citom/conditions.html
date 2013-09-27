@@ -1,0 +1,56 @@
+#{extends 'main.html' /}
+
+#{set page:'citom' /}
+
+
+<div class="row-fluid" style="background-color: #fff;  position: relative;">
+
+
+
+	<div id="map">
+	</div>
+	
+	<div style="position: absolute; top:10px; right:10px; width:250px;">
+		<div class="well well-small"><strong>Current Conditions</strong> 
+		
+		<hr style="margin: 5px 0;">
+		
+		Last: 	<select id="hours" stlye="width: 100px;">
+					<option value="1">hour</option>
+					<option value="2">2 hours</option>
+					<option value="3">3 hours</option>
+					<option value="4">4 hours</option>
+					<option value="5">5 hours</option>
+					<option value="6">6 hours</option>
+					<option value="12">12 hours</option>
+					<option value="24">24 hours</option>
+				</select>
+		
+	
+
+
+		Min Observations: 	<select id="observations" stlye="width: 50px;">
+					<option value="1">1</option>
+					<option value="2">2</option>
+					<option value="3">3</option>
+					<option value="4">4</option>
+					<option value="5">5</option>
+					<option value="10">10</option>
+					<option value="50">50</option>
+					<option value="100">100</option>
+				</select>
+		
+
+		Compare Against Baseline: 
+		<input type="checkbox" id="compare"/>
+		</div>
+
+
+	</div>
+	
+	
+</div>	 
+
+<script src="@{'/public/javascripts/jquery-ui.js'}"></script>
+<script src="@{'/public/bootstrap/js/bootstrap-datepicker.js'}"></script>
+<script src="@{'/public/javascripts/cebu_conditions.js'}"></script>

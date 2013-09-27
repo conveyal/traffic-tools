@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import api.TrafficStatsResponse;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import controllers.Application;
@@ -24,6 +25,10 @@ public class TrafficStats {
 	
 	HashSet<Long> edgeIds;
 	
+	public TrafficStats() {
+		edgeIds = null;
+	}
+	
 	public TrafficStats(Date fromDate, Date toDate, HashSet<Integer> daysOfWeek, Integer fromHour, Integer toHour, HashSet<Long> edgeIds) {
 				
 		this.edgeIds = edgeIds;
@@ -35,7 +40,11 @@ public class TrafficStats {
 			Calendar cal = Calendar.getInstance(); 
 		    cal.setTime(fromDate); 
 		    
-		    while(cal.before(toDate)) {
+		    Calendar calTo = Calendar.getInstance(); 
+		    calTo.setTime(toDate); 
+		    
+		    
+		    while(cal.before(calTo)) {
 		    
 		    	cal.add(Calendar.HOUR_OF_DAY, 1);
 		   
@@ -51,18 +60,23 @@ public class TrafficStats {
 		    		continue;
 		    	
 		    	// query for specific hour
-		    	TrafficStats hourData = new TrafficStats(cal.getTime());
+		    	TrafficStats hourData = new TrafficStats(cal.getTime(), edgeIds);
 		    	
 		    	// add the hour of data to current stats summary
 		    	this.add(hourData);
 		    }
 		}
-		else if (daysOfWeek != null){
+		else if (daysOfWeek != null && daysOfWeek.size() > 0){
 			for(Integer day : daysOfWeek) {
+				if(fromHour == null)
+					fromHour = 0;
+				if(toHour == null)
+					toHour = 23;
+				
 				for(Integer hour = fromHour; hour <= toHour; hour++) {
 					
 					// query for specific hour and day of week
-			    	TrafficStats dayHourData = new TrafficStats(day, hour);
+			    	TrafficStats dayHourData = new TrafficStats(day, hour, edgeIds);
 			    	
 			    	// add the hour of data to current stats summary
 			    	this.add(dayHourData);
@@ -74,19 +88,21 @@ public class TrafficStats {
 			for(Integer hour = fromHour; hour <= toHour; hour++) {
 				
 				// query for specific hour and day of week
-		    	TrafficStats dayHourData = new TrafficStats(hour);
+		    	TrafficStats dayHourData = new TrafficStats(hour, edgeIds);
 		    	
 		    	// add the hour of data to current stats summary
 		    	this.add(dayHourData);
 			}
 		}
 		else {
-			this.add(new TrafficStats());
+			this.add(new TrafficStats(edgeIds));
 		}
 		
 	}
 	
-	public TrafficStats() {
+	public TrafficStats(HashSet<Long> edgeIds) {
+		
+		this.edgeIds = edgeIds;
 		
 		String statsKeyBase = "all";
 		
@@ -94,7 +110,10 @@ public class TrafficStats {
 		
 	}
 	
-	public TrafficStats(Date d) {
+	public TrafficStats(Date d, HashSet<Long> edgeIds) {
+		
+		this.edgeIds = edgeIds;
+		
 		// query for a specific year_month_day_hour 
 		
 		Calendar calendar = Calendar.getInstance();
@@ -105,12 +124,15 @@ public class TrafficStats {
         int day = calendar.get(Calendar.DAY_OF_MONTH);
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
 		
-		String statsKeyBase = year + "_" + month + "_" + day + "_" + hour;
+		String statsKeyBase = "date_" + year + "_" + month + "_" + day + "_" + hour;
 		
 		fetchData(statsKeyBase);
 	}
 	
-	public TrafficStats(Integer dayOfWeek, Integer hour) {
+	public TrafficStats(Integer dayOfWeek, Integer hour, HashSet<Long> edgeIds) {
+		
+		this.edgeIds = edgeIds;
+		
 		// query for a specific year_month_day_hour 
 
 		String statsKeyBase = "day_" + dayOfWeek + "_" + hour;
@@ -118,7 +140,10 @@ public class TrafficStats {
 		fetchData(statsKeyBase);
 	}
 	
-	public TrafficStats(Integer hour) {
+	public TrafficStats(Integer hour, HashSet<Long> edgeIds) {
+		
+		this.edgeIds = edgeIds;
+		
 		// query for a specific year_month_day_hour 
 
 		String statsKeyBase = "hour_" + hour;
@@ -138,7 +163,7 @@ public class TrafficStats {
 		
 		jedisPool.returnResource(jedisStats);
 		
-		if(edgeIds != null) {
+		if(edgeIds != null && edgeIds.size() > 0) {
 
 			for(Long id : edgeIds) {
 				String idString = id.toString();
@@ -186,30 +211,30 @@ public class TrafficStats {
 		return total;
 	}
 	
-	public Map<Long,Double> getEdgeSpeeds(HashSet<Long> ei) {
+	public TrafficStatsResponse getEdgeSpeeds(HashSet<Long> ei) {
 		
 		Set<Long> selectedEdgeIds;
 		
 		if(ei != null)
 			selectedEdgeIds = ei;
-		else if(this.edgeIds!= null)
+		else if(this.edgeIds!= null && edgeIds.size() > 0)
 			selectedEdgeIds = this.edgeIds;
 		else
 			selectedEdgeIds = edgeCounts.keySet();
 			
-		HashMap<Long,Double> speeds = new HashMap<Long,Double>();
-			
+		TrafficStatsResponse response = new TrafficStatsResponse();
+		
 		for(Long id : selectedEdgeIds) {
 			
 			if(edgeSpeedTotals.containsKey(id)) {
 				Double speed = edgeSpeedTotals.get(id);
 				Long count = edgeCounts.get(id);
 				
-				speeds.put(id, (speed / count));	
+				response.addEdge(id,  count,  speed / count);
 			}
 		}
 		
-		return speeds;
+		return response;
 		
 	}
 	
@@ -217,7 +242,7 @@ public class TrafficStats {
 	
 		Set<Long> ids = null;
 		
-		if(edgeIds != null)
+		if(edgeIds != null && edgeIds.size() > 0)
 			ids = edgeIds;
 		else
 			ids = stats.edgeSpeedTotals.keySet();
@@ -233,7 +258,7 @@ public class TrafficStats {
 			this.edgeSpeedTotals.put(edgeId, this.edgeSpeedTotals.get(edgeId) + stats.edgeSpeedTotals.get(edgeId));
 		}
 		
-		if(edgeIds != null)
+		if(edgeIds != null && edgeIds.size() > 0)
 			ids = edgeIds;
 		else
 			stats.edgeCounts.keySet();

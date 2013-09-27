@@ -55,7 +55,7 @@ New message:
 		<hr style="margin: 5px 0;">
 		
 		
-		<span style="float: right;"><span id="compareObserverations'">0</span> observations</span>	 
+		<span style="float: right;"><span id="compareObserverations">0</span> observations</span>	 
 		<strong>Historical Data</strong>	
 		
 		
@@ -63,18 +63,18 @@ New message:
 		<select id="compareSelect" style="margin-top: 10px;"><option value="ALL">All available dates</option><option value="CUSTOM">Custom date range</option></select> 
 		
 		<div id="compareDates">
-			<input style="width: 100px;" placeholder="from (mm/dd/yyy)" type="text"id="compareFromDatePicker">
-			<input style="width: 100px;" placeholder="to (mm/dd/yyy)" type="text"id="compareToDatePicker">
+			<input style="width: 150px;" placeholder="from (mm/dd/yyy)" type="text"id="compareFromDatePicker">
+			<input style="width: 150px;" placeholder="to (mm/dd/yyy)" type="text"id="compareToDatePicker">
 		</div> 
 		
 		<div>Days of week: <br/>
-			<input type="checkbox" id="compareMonday" checked/>M 
-			<input type="checkbox" id="compareTuesday" checked/>Tu 
-			<input type="checkbox" id="compareWednesday" checked/>W 
-			<input type="checkbox" id="compareThursday" checked/>Th 
-			<input type="checkbox" id="compareFriday" checked/>F 
-			<input type="checkbox" id="compareSaturday" checked/>Sa 
-			<input type="checkbox" id="compareSunday" checked/>Su
+			<input type="checkbox" class="compareDays" id="compareMonday" checked/>M 
+			<input type="checkbox" class="compareDays" id="compareTuesday" checked/>Tu 
+			<input type="checkbox" class="compareDays" id="compareWednesday" checked/>W 
+			<input type="checkbox" class="compareDays" id="compareThursday" checked/>Th 
+			<input type="checkbox" class="compareDays" id="compareFriday" checked/>F 
+			<input type="checkbox" class="compareDays" id="compareSaturday" checked/>Sa 
+			<input type="checkbox" class="compareDays" id="compareSunday" checked/>Su
 		</div>
 		
 		
@@ -83,7 +83,7 @@ New message:
 				<div id="compareSlider"></div>
 		</div>
 		
-		<span style="float: right; margin: 20px 0;"><span id="againstObserverations'">0</span> observations</span>
+		<span style="float: right; margin: 20px 0;"><span id="againstObserverations">0</span> observations</span>
 		<p style="margin: 20px 0;"><input id="compareAgainst" type="checkbox"/> <strong>Compare</strong></p>
 		
 		<div id="comparisonView">
@@ -91,18 +91,18 @@ New message:
 		<select id="againstSelect"><option value="ALL">All available dates</option><option value="CUSTOM">Custom date range</option></select> 
 		 
 			<div id="againstDates">
-				<input style="width: 100px;" placeholder="from (mm/dd/yyy)" type="text"id="againstFromDatePicker">
-				<input style="width: 100px;" placeholder="to (mm/dd/yyy)" type="text"id="againstToDatePicker">
+				<input style="width: 150px;" placeholder="from (mm/dd/yyy)" type="text"id="againstFromDatePicker">
+				<input style="width: 150px;" placeholder="to (mm/dd/yyy)" type="text"id="againstToDatePicker">
 			</div> 
 			
 			<div>Days of week: <br/>
-				<input type="checkbox" id="againstMonday" checked/>M 
-				<input type="checkbox" id="againstTuesday" checked/>Tu 
-				<input type="checkbox" id="againstWednesday" checked/>W 
-				<input type="checkbox" id="againstThursday" checked/>Th 
-				<input type="checkbox" id="againstFriday" checked/>F 
-				<input type="checkbox" id="againstSaturday" checked/>Sa 
-				<input type="checkbox" id="againstSunday" checked/>Su
+				<input type="checkbox" class="againstDays" id="againstMonday" checked/>M 
+				<input type="checkbox" class="againstDays" id="againstTuesday" checked/>Tu 
+				<input type="checkbox" class="againstDays" id="againstWednesday" checked/>W 
+				<input type="checkbox" class="againstDays" id="againstThursday" checked/>Th 
+				<input type="checkbox" class="againstDays" id="againstFriday" checked/>F 
+				<input type="checkbox" class="againstDays" id="againstSaturday" checked/>Sa 
+				<input type="checkbox" class="againstDays" id="againstSunday" checked/>Su
 			</div>
 			
 			
@@ -131,8 +131,8 @@ New message:
 		
 		#{list items:saveJourneys, as:'journey'}
 				<hr style="margin: 5px 0;">
-				${journey.name}<span style="float: right;"><a href="@{Citom.clearJourney(journey.id)}">Delete</a></span> <br/>
-				<div style="float: right; margin-left: 10px;">
+				${journey.name}<span style="float: right;"><a href="#" onclick="loadJourney(${journey.originLat}, ${journey.originLon}, ${journey.destinationLat}, ${journey.destinationLon});">View</a> | <a href="@{Citom.clearJourney(journey.id)}">Delete</a></span> <br/>
+				<!-- <div style="float: right; margin-left: 10px;">
 				<h3>${journey.time}</h3>mins</div>
 				
 				<div style="float: left; margin-left: 10px;">
@@ -141,7 +141,7 @@ New message:
 				
 				<div style="margin-left: 100px;">
 				<h3>${journey.speed}</h3>km/h
-				</div>
+				</div> -->
 		#{/list}
 				
 		<hr style="margin: 5px 0;">

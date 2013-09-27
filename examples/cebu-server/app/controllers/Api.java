@@ -9,7 +9,6 @@ import utils.EncodedPolylineBean;
 import utils.Observation;
 import utils.StreetVelocityCache;
 import utils.TrafficStats;
-import utils.TrafficStatsResponse;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
@@ -53,6 +52,7 @@ import api.AlertSimple;
 import api.AuthResponse;
 import api.MessageResponse;
 import api.Path;
+import api.TrafficStatsResponse;
 
 import com.conveyal.traffic.graph.TrafficEdge;
 import com.conveyal.traffic.graph.TrafficGraph;
@@ -630,66 +630,16 @@ public class Api extends Controller {
 			}
     	}
     	
-    	//if(update.getObservations().size() > 0)
-    	//{
-    		/*Future<Object> future = ask(Application.remoteObservationActor, update, 60000);
-    		
-    		future.onSuccess(new OnSuccess<Object>() {
-    			public void onSuccess(Object result) {
-    				
-    				if(result instanceof VehicleUpdateResponse)
-    				{
-    					//Application.updateVehicleStats((VehicleUpdateResponse)result);
-    					
-    					if(((VehicleUpdateResponse) result).pathList.size() == 0)
-    						return;
-    					
-    					Logger.info("update results returned: " + ((VehicleUpdateResponse) result).pathList.size());
-    				
-    					try 
-    					{ 
-    						// wrapping everything around a try catch
-    						if(JPA.local.get() == null)
-    			            {
-    							JPA.local.set(new JPA());
-    							JPA.local.get().entityManager = JPA.newEntityManager();
-    			            }
-    						JPA.local.get().entityManager.getTransaction().begin();
-
-    						for(ArrayList<Integer> edges : ((VehicleUpdateResponse) result).pathList)
-    						{
-    							String edgeIds = StringUtils.join(edges, ", ");
-    							String sql = "UPDATE streetedge SET inpath = inpath + 1 WHERE edgeid IN (" + edgeIds + ") ";
-    							Logger.info(edgeIds);
-    							JPA.local.get().entityManager.createNativeQuery(sql).executeUpdate();
-    						}
-    						
-    						JPA.local.get().entityManager.getTransaction().commit();	
-    					}
-    			        finally 
-    			        {
-    			            JPA.local.get().entityManager.close();
-    			            JPA.local.remove();
-    			        }
-    				}
-    			}
-    		});*/
-    		
-    		//Application.remoteObservationActor.ak(update);
-    		
-    		
-    	//}
-    
         ok();
     }
     
     
-	    static public void traces()
-	    {
-	    	List<LocationUpdate> updates = LocationUpdate.find("order by timestamp desc").fetch(100);
-	    	
-	    	renderJSON(updates);
-	    }
+	static public void traces()
+	{
+		List<LocationUpdate> updates = LocationUpdate.find("order by timestamp desc").fetch(100);
+		
+		renderJSON(updates);
+	}
     
     static public void network()
     {
@@ -701,41 +651,75 @@ public class Api extends Controller {
     }
    
     public static void path(String lat1, String lon1, String lat2, String lon2)
-		   throws JsonGenerationException, JsonMappingException, IOException 
-	{
-	    	    final Coordinate coord1 =
-	    	        new Coordinate(Double.parseDouble(lon1), Double.parseDouble(lat1));
-	    	    final Coordinate coord2 =
-	    	        new Coordinate(Double.parseDouble(lon2), Double.parseDouble(lat2));
-	    	   
-	    	    Path path = new Path();
-	    	    
-	    	    List<Integer> edgeIds = Api.graph.getEdgesBetweenPoints(coord1, coord2);
+		   throws JsonGenerationException, JsonMappingException, IOException {
+	    final Coordinate coord1 =
+	        new Coordinate(Double.parseDouble(lon1), Double.parseDouble(lat1));
+	    final Coordinate coord2 =
+	        new Coordinate(Double.parseDouble(lon2), Double.parseDouble(lat2));
+	   
+	    Path path = new Path();
+	    
+	    List<Integer> edgeIds = Api.graph.getEdgesBetweenPoints(coord1, coord2);
 	
-		    	path.distance = 0.0;
-		    	
-	    	    for(Integer edgeId : edgeIds)
-	    	    {  		
-	    	    	TrafficEdge edge = Api.graph.getTrafficEdge(edgeId);
-	    	    	Geometry geom = edge.getGeometry();
-	    	    	
-	    	    	org.opentripplanner.util.model.EncodedPolylineBean polylineBean =  PolylineEncoder.createEncodings(geom);
-	    	    	
-	    	    	path.addEdge(edgeId, edge.geLength(), polylineBean.getPoints());
-	    	    	
-	    	    	path.distance += edge.geLength();
-	      	    }
-	    	    
-	    	    renderJSON(path);
-	  } 
+		path.distance = 0.0;
+		
+	    for(Integer edgeId : edgeIds)
+	    {  		
+	    	TrafficEdge edge = Api.graph.getTrafficEdge(edgeId);
+	    	Geometry geom = edge.getGeometry();
+	    	
+	    	org.opentripplanner.util.model.EncodedPolylineBean polylineBean =  PolylineEncoder.createEncodings(geom);
+	    	
+	    	path.addEdge(edgeId, edge.geLength(), polylineBean.getPoints());
+	    	
+	    	path.distance += edge.geLength();
+	    }
+	    
+	    renderJSON(path);
+	} 
     
-      public static void trafficStats(String edgeIds, String daysOfWeek, Long fromDate, Long toDate, Integer minHour, Integer maxHour){
+    public static void edges(String edgeIds) {
+ 	    
+    	ArrayList<Integer> edges = new ArrayList<Integer>();
+		
+		if(edgeIds != null) {
+			String[] ids = edgeIds.split(",");
+			
+			if(ids.length > 0) {
+			
+				for(String id : ids) {
+					edges.add(Integer.parseInt(id));
+				}
+			}
+		}
+    	
+    	Path path = new Path();
+ 	    
+ 	 
+ 		path.distance = 0.0;
+ 		
+ 	    for(Integer edgeId : edges)
+ 	    {  		
+ 	    	TrafficEdge edge = Api.graph.getTrafficEdge(edgeId);
+ 	    	Geometry geom = edge.getGeometry();
+ 	    	
+ 	    	org.opentripplanner.util.model.EncodedPolylineBean polylineBean =  PolylineEncoder.createEncodings(geom);
+ 	    	
+ 	    	path.addEdge(edgeId, edge.geLength(), polylineBean.getPoints());
+ 	    	
+ 	    	path.distance += edge.geLength();
+ 	    }
+ 	    
+ 	    renderJSON(path);
+ 	} 
+    
+    public static void trafficStats(String edgeIds, String daysOfWeek, Long fromDate, Long toDate, Integer minHour, Integer maxHour) {
 		
 		Http.Header hd = new Http.Header();
-    	
-    	hd.name = "Access-Control-Allow-Origin";
-    	hd.values = new ArrayList<String>();
-    	hd.values.add("*");
+		
+		hd.name = "Access-Control-Allow-Origin";
+		hd.values = new ArrayList<String>();
+		hd.values.add("*");
 		
 		HashSet<Long> filteredEdges = null;
 		
@@ -756,7 +740,7 @@ public class Api extends Controller {
 			String[] dayArray = daysOfWeek.split(",");
 			
 			if(dayArray.length > 0) {
-				filteredEdges = new HashSet<Long>();
+				days = new HashSet<Integer>();
 				for(String day : dayArray) {
 					days.add(Integer.parseInt(day));
 				}
@@ -770,16 +754,93 @@ public class Api extends Controller {
 		
 		Date to = null;
 		
-		if(toDate != null) 
+		if(toDate != null)
 			to = new Date(toDate);
 			
 		TrafficStats stats = new TrafficStats(from, to, days, minHour, maxHour, filteredEdges);
 		
-		TrafficStatsResponse response = new TrafficStatsResponse();
-		
-		response.edges = stats.getEdgeSpeeds(null);
-		response.totalObservations = stats.getTotalObservations();
-		
+		TrafficStatsResponse response = stats.getEdgeSpeeds(null);
+	
 		renderJSON(response);
 	}
+    
+    public static void currentConditions(Integer hours) {
+		
+		Http.Header hd = new Http.Header();
+		
+		hd.name = "Access-Control-Allow-Origin";
+		hd.values = new ArrayList<String>();
+		hd.values.add("*");
+		
+		Calendar cal = Calendar.getInstance(); 
+		
+		cal.setTime(new Date()); 
+	
+		cal.add(Calendar.DAY_OF_YEAR, -15);
+		
+		TrafficStats stats = new TrafficStats(cal.getTime(), null);
+		
+		if(hours != null && hours > 1) {
+			while(hours > 1) {
+				
+				cal.add(Calendar.HOUR_OF_DAY, -1);
+				
+				TrafficStats s = new TrafficStats(cal.getTime(), null);
+				
+				stats.add(s);
+				
+				hours--;
+			}
+		}
+		
+		TrafficStatsResponse response = stats.getEdgeSpeeds(null);
+	
+		renderJSON(response);
+	}
+    
+    public static void baselineConditions(Integer hours) {
+		
+		Http.Header hd = new Http.Header();
+		
+		hd.name = "Access-Control-Allow-Origin";
+		hd.values = new ArrayList<String>();
+		hd.values.add("*");
+		
+		Calendar cal = Calendar.getInstance(); 
+		
+		TrafficStats stats = new TrafficStats();
+		
+		for(int i = 1; i <= 4; i++) {
+		
+			cal.setTime(new Date()); 
+			cal.add(Calendar.WEEK_OF_YEAR, 0 - i);
+			
+			Integer h = hours;
+			
+			if(h != null && h > 1) {
+				
+				while(h > 1) {
+					
+					cal.add(Calendar.HOUR_OF_DAY, -1);
+					
+					TrafficStats s = new TrafficStats(cal.getTime(), null);
+					
+					stats.add(s);
+					
+					h--;
+				}
+			}
+			else {
+				TrafficStats s = new TrafficStats(cal.getTime(), null);
+				stats.add(s);
+			}
+		}
+		
+		
+		
+		TrafficStatsResponse response = stats.getEdgeSpeeds(null);
+	
+		renderJSON(response);
+	}
+    
 }

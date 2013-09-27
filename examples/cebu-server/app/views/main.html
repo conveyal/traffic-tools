@@ -74,7 +74,7 @@
          
             <ul class="nav">
             	
-            	<li #{if page == 'index'}class="active"#{/if}><a href="@{Application.index}">Current Conditions</a></li>
+            	<li #{if page == 'index'}class="active"#{/if}><a href="@{Application.index}">Current Alerts</a></li>
             
 	           	#{secure.check 'citom'}
 	            	<li class="dropdown#{if page == 'citom'} active#{/if}">
@@ -82,6 +82,7 @@
 	            		<ul class="dropdown-menu">
 	            			<li><a href="@{Citom.incidents}">Traffic Alerts</a></li>
 	     		 			<li><a href="@{Citom.journey}">Journey Time Analysis</a></li>
+	     		 			<li><a href="@{Citom.conditions}">Current Traffic Conditions</a></li>
 	     		 			<!--  <li><a href="@{Citom.area}">Area Analysis</a></li> -->
 	    				</ul>
 	    			</li>

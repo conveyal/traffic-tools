@@ -1,3 +1,8 @@
+
+var colors = ['#A50026','#D73027','#F46D43','#FDAE61','#FEE090','#E0F3F8','#ABD9E9','#74ADD1','#4575B4','#313695'];
+var negColors = ['#FEF0D9','#FDCC8A','#FC8D59','#E34A33','#B30000'];
+var posColors = ['#F1EEF6','#BDC9E1','#74A9CF','#2B8CBE','#045A8D'];
+
 var mbUrl = 'http://{s}.tiles.mapbox.com/v3/conveyal.map-jc4m5i21/{z}/{x}/{y}.png';
 
 var cLayers = new Array();
@@ -9,9 +14,11 @@ var newMarker = null;
 L.EncodedPolyline = L.Polyline.extend ({
 	
 	initialize: function (polyline, options) {
-		L.Polyline.prototype.initialize.call(this, options);
-	
+
 		this._latlngs = this._decode(polyline);
+
+		L.Polyline.prototype.initialize.call(this, this._latlngs, options);
+
 	},
 	
 	setPolyline: function (polyline) {
@@ -99,7 +106,16 @@ $(document).ready(sizeContent);
 $(window).resize(sizeContent);
 
 
-var startMarker, endMarker, path, polyline, pathEdges;
+var startMarker, endMarker, path, polyline, pathEdges, pathStats1, pathStats2, statsLoadPending;
+var copmareMinHour, compareMaxHour, againstMinHour, againstMaxHour;
+var compareDays, compareFromDate, compareToDate;
+
+var againstMinHour, againstMaxHour, againstMinHour, againstMaxHour;
+var againstDays, againstFromDate, againstToDate;
+
+
+var compare = false;
+
 
 function sizeContent() {
   var newHeight = $(window).height() - $("#header").height() + "px";
@@ -112,14 +128,17 @@ function mapClick(mEvent)
 	{
 		startMarker = L.marker(mEvent.latlng, {icon: startIcon, draggable: true});
 		startMarker.on('drag', markerDrag);
+		startMarker.on('dragend', markerDragEnd);
 		startMarker.addTo(map);
 
 	}
 	else if(endMarker == null)
 	{
 		endMarker = L.marker(mEvent.latlng, {icon: endIcon, draggable: true});
-		endMarker.on('drag', markerDrag)
+		endMarker.on('drag', markerDrag);
+		endMarker.on('dragend', markerDragEnd);
 		endMarker.addTo(map);
+		statsLoadPending = true;
 	}
 	
 	
@@ -139,6 +158,12 @@ function markerDrag()
 	{
 		loadPath();
 	}
+}
+
+function markerDragEnd() {
+	
+	statsLoadPending = true;
+	loadStats();
 }
 
 function clearRoute()
@@ -192,64 +217,221 @@ function loadPath()
 		filter = '&hours=' + $('#hours').val() + '&days=' + $('#days').val();
 	}
 
-
+	pathEdges = "";
 	$.get('/api/path?lat1=' + startMarker.getLatLng().lat + '&lon1=' + startMarker.getLatLng().lng + '&lat2=' + endMarker.getLatLng().lat + '&lon2=' + endMarker.getLatLng().lng + filter, function(data) {
+		
 		path = data;
 		
+		updatePath();
+
+		if(statsLoadPending)
+			loadStats()
+		
 		$('#saveButton').show();
-
-		pathLayer.clearLayers();
-		
-		var dist = (path.distance / 1000.0);
-		$('#journeyDistance').text(dist.toFixed(2));
-		
-		/*var speed = path.minSpeed;
-		var time1 = (path.distance / speed / 60);
-		
-		$('#saveform_path').val(path.edgeIds.join(","));
-
-		
-		
-		$('#journeyTime').text(time1.toFixed(2));
-		
-		$('#avgSpeed').text((speed * 3.6).toFixed(2));
-		
-		$('#saveform_time').val(time1.toFixed(2));
-		$('#saveform_distance').val(dist.toFixed(2));
-		$('#saveform_speed').val((speed * 3.6).toFixed(2));
-		
-		var time2 = (path.distance / (speed + 0.5 ) / 60);
-		var timeDelta = time2 - time1; */
-		
-		//$('#journeyTimeDelta').text('-' + timeDelta.toFixed(2));
-		
-		//$('#avgSpeedDelta').text('+' + (0.5 * 3.6).toFixed(2));
-		
-		var edgeIds = new Array();
-		for(edge in path.edges)
-		{
-			var polyline = new L.EncodedPolyline(path.edges[edge].geom, {color: "#00f",	weight: 7, opacity: 0.3});
-			
-			edgeIds.push(path.edges[edge].edgeId);
-			
-			polyline.addTo(pathLayer);
-		}
-		pathEdges = edgeIds.join();
-		
-		loadStats();
 	});
 }
 
 function loadStats()
 {
-	$.get('/api/trafficStats', {edgeIds: pathEdges}, function(data) {
-		
+	if(!pathEdges)
+		return;
+
+	var queryParams = {
+		edgeIds: pathEdges
+	}
+	
+	if(compareMaxHour && !(compareMaxHour == 23 && compareMinHour == 0)) {
+		queryParams.minHour = compareMinHour;
+		queryParams.maxHour = compareMaxHour;
+	}
+
+	if(compareDays) {
+		queryParams.daysOfWeek = compareDays;
+	}
+
+	if($('#compareSelect').val() == 'CUSTOM' && compareFromDate && compareToDate) {
+		queryParams.fromDate = compareFromDate;	
+		queryParams.toDate = compareToDate;	
+	}
+
+	statsLoadPending = false;
+	
+	$('#compareObserverations').html('<img src="/public/images/loader.gif"/>');
+
+	$.get('/api/trafficStats', queryParams, function(data) {
+		pathStats1 = data;
+		updatePath();
 	});
+
+	if(compare) {
+
+		queryParams = {
+			edgeIds: pathEdges
+		}
+		
+		if(againstMaxHour && !(againstMaxHour == 23 && againstMinHour == 0)) {
+			queryParams.minHour = againstMinHour;
+			queryParams.maxHour = againstMaxHour;
+		}
+
+		if(againstDays) {
+			queryParams.daysOfWeek = againstDays;
+		}
+
+		if($('#againstSelect').val() == 'CUSTOM' && againstFromDate && againstToDate) {
+			queryParams.fromDate = againstFromDate;	
+			queryParams.toDate = againstToDate;	
+		}
+		
+		$('#againstObserverations').html('<img src="/public/images/loader.gif"/>');
+
+		$.get('/api/trafficStats', queryParams, function(data) {
+			pathStats2 = data;
+			updatePath();
+		});
+
+	}
+	else {
+		pathStats2 = null;
+	}
 	
 }
 
 var overlayUrl = 'http://cebutraffic.org/tiles_avg/{z}/{x}/{y}.png';
 var overlay = null;
+
+function updatePath() {
+	/*var speed = path.minSpeed;
+	var time1 = (path.distance / speed / 60);
+	
+	$('#saveform_path').val(path.edgeIds.join(","));
+
+	
+	
+	$('#avgSpeed').text((speed * 3.6).toFixed(2));
+	
+	$('#saveform_time').val(time1.toFixed(2));
+	$('#saveform_distance').val(dist.toFixed(2));
+	$('#saveform_speed').val((speed * 3.6).toFixed(2));
+	
+	var time2 = (path.distance / (speed + 0.5 ) / 60);
+	var timeDelta = time2 - time1; */
+	
+	//$('#journeyTimeDelta').text('-' + timeDelta.toFixed(2));
+	
+	//$('#avgSpeedDelta').text('+' + (0.5 * 3.6).toFixed(2));
+
+	
+	pathLayer.clearLayers();
+	
+	var dist = (path.distance / 1000.0);
+	$('#journeyDistance').text(dist.toFixed(2));
+
+	
+	var edgeIds = new Array();
+	
+	var distanceTotal = 0;
+	var distanceWeightedSpeedTotal = 0; 
+
+	for(edge in path.edges)
+	{
+
+		var edgeId = path.edges[edge].edgeId;
+		var distance = path.edges[edge].distance;
+
+		var color =  '#aaa';
+		var label = '';
+
+		if (pathStats1 && pathStats2) {
+
+			if(pathStats1.edges[edgeId] && pathStats2.edges[edgeId]) {
+				
+				var speed1 = pathStats1.edges[edgeId].speed;
+				var speed2 = pathStats2.edges[edgeId].speed;
+
+				var pctChange = (speed2 - speed1) / speed1;
+
+				label = 'Speed: ' + (speed1  * 3.6).toFixed(1) + '/' + (speed2  * 3.6).toFixed(1) + ' km/h  Change: ' +  (pctChange * 100).toFixed(1) + '% Observations: ' + pathStats1.edges[edgeId].obvs + '/' + pathStats2.edges[edgeId].obvs; 
+
+				if(pctChange > 0) {
+
+					var band = Math.floor(Math.abs(pctChange) / 0.05);
+					if(band > 4)
+						band = 4;
+					color = posColors[band];
+
+				}
+				else if( pctChange == 0) {
+
+					label = 'no change';
+					color = '#aaa';	
+				}
+				else {
+
+					var band = Math.floor(Math.abs(pctChange) / 0.05);
+					if(band > 4)
+						band = 4;
+					color = negColors[band];
+
+				}
+				
+				distanceTotal += distance;
+				distanceWeightedSpeedTotal += speed1 * distance;
+
+				
+			}
+			else {
+				color = '#aaa';	
+				label = 'no data'
+			}
+
+
+		}
+		else if(pathStats1) {
+			if(pathStats1.edges[edgeId]) {
+				
+				var speed = pathStats1.edges[edgeId].speed;
+
+				var band = Math.floor(speed / 2)
+				if(band > 9)
+					band = 9;
+				color = colors[band];
+
+				distanceTotal += distance;
+				distanceWeightedSpeedTotal += speed * distance;
+
+				label = 'Speed: ' + (pathStats1.edges[edgeId].speed  * 3.6).toFixed(1) + ' km/h  Observations: ' + pathStats1.edges[edgeId].obvs; 
+			}
+			else {
+				color = '#aaa';	
+				label = 'no data'
+			}
+		}
+
+		var polyline = new L.EncodedPolyline(path.edges[edge].geom, {color: color, weight: 5, opacity: 1});
+		polyline.bindLabel(label);
+		
+		edgeIds.push(path.edges[edge].edgeId);
+		
+		polyline.addTo(pathLayer);
+	}
+
+	var avgSpeed = distanceWeightedSpeedTotal / distanceTotal;
+
+	$('#avgSpeed').text((avgSpeed * 3.6).toFixed(2));
+
+	var time1 = (path.distance / avgSpeed / 60);
+
+	$('#journeyTime').text(time1.toFixed(2));
+
+	if(pathStats1)
+		$('#compareObserverations').text(pathStats1.totalObservations);
+	
+	if(pathStats2)
+		$('#againstObserverations').text(pathStats2.totalObservations);
+
+	pathEdges = edgeIds.join();
+}
 
 function currentConditions()
 {
@@ -261,7 +443,7 @@ function currentConditions()
 
 }
 
-function compare()
+function customDate()
 {
 	if($('#compareSelect').val() == 'CUSTOM')
 		$('#compareDates').show();
@@ -272,6 +454,31 @@ function compare()
 		$('#againstDates').show();
 	else
 		$('#againstDates').hide();
+
+	loadStats()
+}
+
+function loadJourney(originLat, originLon, destinationLat, destinationLon) {
+
+	clearRoute();
+
+	startMarker = L.marker([originLat, originLon], {icon: startIcon, draggable: true});
+	startMarker.on('drag', markerDrag);
+	startMarker.on('dragend', markerDragEnd);
+	startMarker.addTo(map);
+
+	
+	endMarker = L.marker([destinationLat, destinationLon], {icon: endIcon, draggable: true});
+	endMarker.on('drag', markerDrag);
+	endMarker.on('dragend', markerDragEnd);
+	endMarker.addTo(map);
+	statsLoadPending = true;
+	
+	$('#clickIntro').hide();
+	$('#dragIntro').show();
+		
+	loadPath();
+
 }
 
 $(document).ready(function() {
@@ -285,6 +492,13 @@ $(document).ready(function() {
         values: [ 0, 23 ],
         slide: function( event, ui ) {
             $("#compareHourRange").html( "" + ui.values[ 0 ] + "hr - " + ui.values[ 1 ] + 'hr');
+            
+
+        },
+        change: function (event, ui ) {
+        	compareMinHour = ui.values[ 0 ];
+            compareMaxHour = ui.values[ 1 ];
+            loadStats();
         }
     });
 	
@@ -295,7 +509,66 @@ $(document).ready(function() {
         values: [ 0, 23 ],
         slide: function( event, ui ) {
             $("#againstHourRange").html( "" + ui.values[ 0 ] + "hr - " + ui.values[ 1 ] + 'hr');
+        },
+        change: function (event, ui ) {
+        	againstMinHour = ui.values[ 0 ];
+            againstMaxHour = ui.values[ 1 ];
+            loadStats();
         }
+    });
+
+    $('.compareDays').on('click', function(evt){
+    	
+    	var days = [];
+
+    	if($('#compareSunday').is(":checked"))
+    		days.push(1); 
+    	if($('#compareMonday').is(":checked"))
+    		days.push(2);
+		if($('#compareTuesday').is(":checked"))
+    		days.push(3);
+		if($('#compareWednesday').is(":checked"))
+    		days.push(4);
+		if($('#compareThursday').is(":checked"))
+    		days.push(5);
+		if($('#compareFriday').is(":checked"))
+    		days.push(6);
+		if($('#compareSaturday').is(":checked"))
+    		days.push(7);
+		
+		if(days.length == 7 || days.length == 0)
+			compareDays = null;
+		else
+			compareDays = days.join(",");
+
+		loadStats();
+    });
+
+    $('.againstDays').on('click', function(evt){
+    	
+    	var days = [];
+
+    	if($('#againstSunday').is(":checked"))
+    		days.push(1); 
+    	if($('#againstMonday').is(":checked"))
+    		days.push(2);
+		if($('#againstTuesday').is(":checked"))
+    		days.push(3);
+		if($('#againstWednesday').is(":checked"))
+    		days.push(4);
+		if($('#againstThursday').is(":checked"))
+    		days.push(5);
+		if($('#againstFriday').is(":checked"))
+    		days.push(6);
+		if($('#againstSaturday').is(":checked"))
+    		days.push(7);
+		
+		if(days.length == 7 || days.length == 0)
+			againsteDays = null;
+		else
+			againstDays = days.join(",");
+
+		loadStats();
     });
 	
 	$('#dragIntro').hide();
@@ -307,15 +580,19 @@ $(document).ready(function() {
 		
 		if($('#compareAgainst').is(':checked')) {
 			$('#comparisonView').show();
+			compare = true;
+			loadStats();
 		}
 		else {
 			$('#comparisonView').hide();
+			compare = false;
+			loadStats();
 		}
 		
 	});
 	
-	$('#compareSelect').on('change', compare);
-	$('#againstSelect').on('change', compare);
+	$('#compareSelect').on('change', customDate);
+	$('#againstSelect').on('change', customDate);
 	
 	$('#compareDates').hide();
 	$('#againstDates').hide();
@@ -326,8 +603,26 @@ $(document).ready(function() {
 	
 	$('#dataNotAvailable').hide();
 	
-	$('#compareFromDatePicker').datepicker();
-	$('#compareToDatePicker').datepicker();
+	$('#compareFromDatePicker').datepicker().on('changeDate', function(evt){
+		compareFromDate = evt.date.valueOf();
+		loadStats();
+	});
+
+	$('#compareToDatePicker').datepicker().on('changeDate', function(evt){
+		compareToDate = evt.date.valueOf();
+		loadStats();
+	});
+
+	$('#againstFromDatePicker').datepicker().on('changeDate', function(evt){
+		againstFromDate = evt.date.valueOf();
+		loadStats();
+	});
+
+	$('#againstToDatePicker').datepicker().on('changeDate', function(evt){
+		againstToDate = evt.date.valueOf();
+		loadStats();
+	});
+
 	$('#againstFromDatePicker').datepicker()
 	$('#againstToDatePicker').datepicker()
 	

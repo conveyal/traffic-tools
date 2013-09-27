@@ -85,6 +85,10 @@ public class Citom extends Controller {
 		render();
 	}
 	
+	public static void conditions() {
+		render();
+	}
+	
 	public static void journey() {
 		
 		List<Journey> saveJourneys = Journey.findAll();
