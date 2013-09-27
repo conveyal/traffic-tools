@@ -9,11 +9,21 @@ import play.mvc.Http.WebSocketClose;
 import play.mvc.Http.WebSocketEvent;
 import play.mvc.Http.WebSocketFrame;
 import play.mvc.WebSocketController;
+import redis.clients.jedis.BinaryJedis;
+import redis.clients.jedis.JedisPool;
+
 
 public class Ws extends WebSocketController {
 
+	static JedisPool jedisPool = new JedisPool("localhost");
+	
 	static void processPbFrame(byte[] data, String source) {
 		try {
+			
+			BinaryJedis jedis = jedisPool.getResource();
+			jedis.rpush("queue".getBytes(), data);
+			jedisPool.returnResource(jedis);
+			
 			LocationUpdate locationUpdate = LocationUpdate.parseFrom(data);
 		  	
 		  	Logger.info(source + " binary frame recieved: " + locationUpdate.getLocationList().size() + " updates/" + data.length + " bytes from phone " + locationUpdate.getPhone());
