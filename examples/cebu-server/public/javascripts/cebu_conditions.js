@@ -259,6 +259,8 @@ $(document).ready(function() {
 	pathLayer.addTo(map);
 
 	loadStats();
+
+	window.setInterval(loadStats, 1000 * 60 * 5);
  
 });
 

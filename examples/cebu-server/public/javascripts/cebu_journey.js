@@ -301,26 +301,6 @@ var overlayUrl = 'http://cebutraffic.org/tiles_avg/{z}/{x}/{y}.png';
 var overlay = null;
 
 function updatePath() {
-	/*var speed = path.minSpeed;
-	var time1 = (path.distance / speed / 60);
-	
-	$('#saveform_path').val(path.edgeIds.join(","));
-
-	
-	
-	$('#avgSpeed').text((speed * 3.6).toFixed(2));
-	
-	$('#saveform_time').val(time1.toFixed(2));
-	$('#saveform_distance').val(dist.toFixed(2));
-	$('#saveform_speed').val((speed * 3.6).toFixed(2));
-	
-	var time2 = (path.distance / (speed + 0.5 ) / 60);
-	var timeDelta = time2 - time1; */
-	
-	//$('#journeyTimeDelta').text('-' + timeDelta.toFixed(2));
-	
-	//$('#avgSpeedDelta').text('+' + (0.5 * 3.6).toFixed(2));
-
 	
 	pathLayer.clearLayers();
 	
@@ -332,6 +312,7 @@ function updatePath() {
 	
 	var distanceTotal = 0;
 	var distanceWeightedSpeedTotal = 0; 
+	var distanceWeightedSpeed2Total = 0;
 
 	for(edge in path.edges)
 	{
@@ -378,7 +359,9 @@ function updatePath() {
 				distanceTotal += distance;
 				distanceWeightedSpeedTotal += speed1 * distance;
 
-				
+
+				distanceWeightedSpeed2Total += speed2 * distance;
+							
 			}
 			else {
 				color = '#aaa';	
@@ -427,8 +410,18 @@ function updatePath() {
 	if(pathStats1)
 		$('#compareObserverations').text(pathStats1.totalObservations);
 	
-	if(pathStats2)
+	if(pathStats2) {
+
+		var avgSpeed2 = distanceWeightedSpeed2Total / distanceTotal;
+
 		$('#againstObserverations').text(pathStats2.totalObservations);
+		var time2 = ((distanceTotal * (avgSpeed2 - avgSpeed)) / 60 / 60);
+
+		$('#journeyTimeDelta').text(time2.toFixed(2));
+		
+		$('#avgSpeedDelta').text(((avgSpeed2 - avgSpeed) * 3.6).toFixed(2));
+	}
+		
 
 	pathEdges = edgeIds.join();
 }
