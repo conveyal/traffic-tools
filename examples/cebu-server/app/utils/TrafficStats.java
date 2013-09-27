@@ -158,42 +158,47 @@ public class TrafficStats {
 		
 		Jedis jedisStats = jedisPool.getResource();
 		
-		Map<String,String> counts = jedisStats.hgetAll(countKey);
-		Map<String,String> speeds = jedisStats.hgetAll(speedKey);
-		
-		jedisPool.returnResource(jedisStats);
-		
-		if(edgeIds != null && edgeIds.size() > 0) {
+		try {
+			Map<String,String> counts = jedisStats.hgetAll(countKey);
+			Map<String,String> speeds = jedisStats.hgetAll(speedKey);
+			
+			if(edgeIds != null && edgeIds.size() > 0) {
 
-			for(Long id : edgeIds) {
-				String idString = id.toString();
+				for(Long id : edgeIds) {
+					String idString = id.toString();
+					
+					if(speeds.containsKey(idString)) {
+						Long speed = Long.parseLong(speeds.get(idString));
+						edgeSpeedTotals.put(id, (speed / 100.0));
+					}
+					
+					if(counts.containsKey(idString)) {
+						Long count = Long.parseLong(counts.get(idString));
+						edgeCounts.put(id, count);
+					}
+				}
+			}
+			else {
 				
-				if(speeds.containsKey(idString)) {
+				for(String idString : speeds.keySet()) {
+					Long id = Long.parseLong(idString);
 					Long speed = Long.parseLong(speeds.get(idString));
 					edgeSpeedTotals.put(id, (speed / 100.0));
 				}
-				
-				if(counts.containsKey(idString)) {
+					
+				for(String idString : counts.keySet()) {
+					Long id = Long.parseLong(idString);
 					Long count = Long.parseLong(counts.get(idString));
 					edgeCounts.put(id, count);
 				}
+					
 			}
 		}
-		else {
-			
-			for(String idString : speeds.keySet()) {
-				Long id = Long.parseLong(idString);
-				Long speed = Long.parseLong(speeds.get(idString));
-				edgeSpeedTotals.put(id, (speed / 100.0));
-			}
-				
-			for(String idString : counts.keySet()) {
-				Long id = Long.parseLong(idString);
-				Long count = Long.parseLong(counts.get(idString));
-				edgeCounts.put(id, count);
-			}
-				
+		finally {
+			jedisPool.returnResource(jedisStats);
 		}
+		
+		
 	}
 	
 	public Long getTotalObservations() {
@@ -285,22 +290,30 @@ public class TrafficStats {
         int day = calendar.get(Calendar.DAY_OF_MONTH);
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
 		
-		Jedis jedisStats = jedisPool.getResource();
+		
 		
 		String statsKeyBase = year + "_" + month + "_" + day + "_" + hour;
 		
 		String countKey = statsKeyBase + "_c";
 		String speedKey = statsKeyBase + "_s";
 		
-		String countStr = jedisStats.hget(countKey, edgeId.toString());
-		String speedStr = jedisStats.hget(speedKey, edgeId.toString());
-		
-		jedisPool.returnResource(jedisStats);
+		Jedis jedisStats = jedisPool.getResource();
 		
 		Double speed = null;
 		
+		try {
+		
+		String countStr = jedisStats.hget(countKey, edgeId.toString());
+		String speedStr = jedisStats.hget(speedKey, edgeId.toString());
+		
+		
 		if(countStr != null && !countStr.isEmpty() && speedStr != null && speedStr.isEmpty()) {
 			speed = (Double)(Long.parseLong(speedStr) / Long.parseLong(countStr) / 100.0); 
+		}
+		
+		}
+		finally {
+			jedisPool.returnResource(jedisStats);
 		}
 		
 		return speed;
@@ -311,57 +324,62 @@ public class TrafficStats {
 		
 		Jedis jedisStats = jedisPool.getResource();
 		
-		// storing stats in keys with date_yyyy_mm_dd_hh base 
-		// observation counts are stored in [key]_c while speed totals are stored in [key]_s 
-		// both are hashes of edge ids
-		
-		jedisStats.incr("totalObservations");
-		
-		Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(d.getTime());
-		
-		Integer year = calendar.get(Calendar.YEAR);
-		Integer month = calendar.get(Calendar.MONTH);
-		Integer day = calendar.get(Calendar.DAY_OF_MONTH);
-		Integer hour = calendar.get(Calendar.HOUR_OF_DAY);
-		Integer dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-		
-		
-		// count observations by time bucket 
-		String statsKeyBase = "date_" + year;
-		jedisStats.hincrBy(statsKeyBase, month.toString(), 1);
-		
-		statsKeyBase += "_" + month;
-		jedisStats.hincrBy(statsKeyBase, day.toString(), 1);
-		
-		statsKeyBase += "_" + day; 
-		jedisStats.hincrBy(statsKeyBase, hour.toString(), 1);
-		
-		statsKeyBase += "_" + hour; 
-		
-		String countKey = statsKeyBase + "_c";
-		String speedKey = statsKeyBase + "_s";
-
-		// increment count for edgeId
-		jedisStats.hincrBy(countKey, edgeId.toString(), 1);
-		
-		// speeds are stored as cm/s as integers for efficiency
-		Long cmSpeed = Math.round(speed * 100);
-		
-		// increment speed
-		jedisStats.hincrBy(speedKey, edgeId.toString(), cmSpeed);
-		
-		// store collapsed views of data too day_dow_hh_, hour_hh_ and all_  
-		
-		jedisStats.hincrBy("day_" + dayOfWeek + "_" + hour + "_s", edgeId.toString(), cmSpeed);
-		jedisStats.hincrBy("day_" + dayOfWeek + "_" + hour + "_c", edgeId.toString(), 1);
-		
-		jedisStats.hincrBy("hour_" + hour + "_s", edgeId.toString(), cmSpeed);
-		jedisStats.hincrBy("hour_" + hour + "_c", edgeId.toString(), 1);
-		
-		jedisStats.hincrBy("all_s", edgeId.toString(), cmSpeed);
-		jedisStats.hincrBy("all_c", edgeId.toString(), 1);
-		
-		jedisPool.returnResource(jedisStats);
+		try {
+			// storing stats in keys with date_yyyy_mm_dd_hh base 
+			// observation counts are stored in [key]_c while speed totals are stored in [key]_s 
+			// both are hashes of edge ids
+			
+			jedisStats.incr("totalObservations");
+			
+			Calendar calendar = Calendar.getInstance();
+	        calendar.setTimeInMillis(d.getTime());
+			
+			Integer year = calendar.get(Calendar.YEAR);
+			Integer month = calendar.get(Calendar.MONTH);
+			Integer day = calendar.get(Calendar.DAY_OF_MONTH);
+			Integer hour = calendar.get(Calendar.HOUR_OF_DAY);
+			Integer dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+			
+			
+			// count observations by time bucket 
+			String statsKeyBase = "date_" + year;
+			jedisStats.hincrBy(statsKeyBase, month.toString(), 1);
+			
+			statsKeyBase += "_" + month;
+			jedisStats.hincrBy(statsKeyBase, day.toString(), 1);
+			
+			statsKeyBase += "_" + day; 
+			jedisStats.hincrBy(statsKeyBase, hour.toString(), 1);
+			
+			statsKeyBase += "_" + hour; 
+			
+			String countKey = statsKeyBase + "_c";
+			String speedKey = statsKeyBase + "_s";
+	
+			// increment count for edgeId
+			jedisStats.hincrBy(countKey, edgeId.toString(), 1);
+			
+			// speeds are stored as cm/s as integers for efficiency
+			Long cmSpeed = Math.round(speed * 100);
+			
+			// increment speed
+			jedisStats.hincrBy(speedKey, edgeId.toString(), cmSpeed);
+			
+			// store collapsed views of data too day_dow_hh_, hour_hh_ and all_  
+			
+			jedisStats.hincrBy("day_" + dayOfWeek + "_" + hour + "_s", edgeId.toString(), cmSpeed);
+			jedisStats.hincrBy("day_" + dayOfWeek + "_" + hour + "_c", edgeId.toString(), 1);
+			
+			jedisStats.hincrBy("hour_" + hour + "_s", edgeId.toString(), cmSpeed);
+			jedisStats.hincrBy("hour_" + hour + "_c", edgeId.toString(), 1);
+			
+			jedisStats.hincrBy("all_s", edgeId.toString(), cmSpeed);
+			jedisStats.hincrBy("all_c", edgeId.toString(), 1);
+			
+			
+		}
+		finally {
+			jedisPool.returnResource(jedisStats);
+		}
 	}
 }
