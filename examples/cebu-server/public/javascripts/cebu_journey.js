@@ -497,9 +497,6 @@ function saveCsvPath() {
 		queryParams.toDate = compareToDate;	
 	}
 
-	statsLoadPending = false;
-	
-	$('#compareObserverations').html('<img src="/public/images/loader.gif"/>');
 
 	$.get('/api/trafficStats', queryParams, function(data) {
 
@@ -538,9 +535,7 @@ function saveCsvAll() {
 		queryParams.fromDate = compareFromDate;	
 		queryParams.toDate = compareToDate;	
 	}
-
-	statsLoadPending = false;
-
+	
 	$.get('/api/trafficStats', queryParams, function(data) {
 	
 		var lines = []
