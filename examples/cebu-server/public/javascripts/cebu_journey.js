@@ -161,7 +161,8 @@ function markerDrag()
 }
 
 function markerDragEnd() {
-	
+
+	updatePath();
 	statsLoadPending = true;
 	loadStats();
 }
@@ -535,7 +536,7 @@ function saveCsvAll() {
 		queryParams.fromDate = compareFromDate;	
 		queryParams.toDate = compareToDate;	
 	}
-	
+
 	$.get('/api/trafficStats', queryParams, function(data) {
 	
 		var lines = []
