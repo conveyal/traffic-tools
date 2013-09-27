@@ -776,8 +776,6 @@ public class Api extends Controller {
 		
 		cal.setTime(new Date()); 
 	
-		cal.add(Calendar.DAY_OF_YEAR, -15);
-		
 		TrafficStats stats = new TrafficStats(cal.getTime(), null);
 		
 		if(hours != null && hours > 1) {
