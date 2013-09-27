@@ -28,18 +28,35 @@ public class QueueSubscriberJob extends Job {
     	Date lastStatsUpdate = new Date();
     	Long lastTotalLocationUpdates = 0l;
     	
-    	Jedis jedis = jedisPool.getResource();
+    	Jedis jedis = null;
     	
-    	if(jedis.get("totalLocationUpdates") != null) 
-    		lastTotalLocationUpdates = Long.parseLong(jedis.get("totalLocationUpdates"));
+    	try {
+    		jedis = jedisPool.getResource();
+    		if(jedis.get("totalLocationUpdates") != null) 
+        		lastTotalLocationUpdates = Long.parseLong(jedis.get("totalLocationUpdates"));
+        	
+    	}
+    	finally {
+    		jedisPool.returnResource(jedis);
+    	}
     	
-    	jedisPool.returnResource(jedis);
+    	
+    	
+    	
 
     	while(true) {
+    		BinaryJedis jedisBinary = null;
+    		byte[] queueVal = null;
     		
-    		BinaryJedis jedisBinary = jedisPool.getResource();
-    		byte[] queueVal = jedisBinary.lpop("queue".getBytes());
-    		jedisPool.returnResource(jedisBinary);
+    		try {
+    			jedisBinary = jedisPool.getResource();
+        		queueVal = jedisBinary.lpop("queue".getBytes());
+    		}
+    		finally {
+    			jedisPool.returnResource(jedisBinary);
+    		}
+    	
+    		
     		
     		
     		// wait for data if queue is empty
@@ -63,17 +80,22 @@ public class QueueSubscriberJob extends Job {
     		
     		Long elapsedMs = (new Date().getTime() - lastStatsUpdate.getTime());
     		if(elapsedMs > 1000) {
-    			jedis = jedisPool.getResource();
-    			Long currentTotalLocationUpdates = 0l;
-    			if(jedis.get("totalLocationUpdates".getBytes()) != null) 
-    				currentTotalLocationUpdates = Long.parseLong(jedis.get("totalLocationUpdates"));
-    			
-    			Double  processingRate =  ((double)(currentTotalLocationUpdates - (double)lastTotalLocationUpdates));
-    			
-    			lastTotalLocationUpdates = currentTotalLocationUpdates;	 	 	
-    			
-    			jedis.set("processingRate",processingRate.toString());
-    			jedisPool.returnResource(jedis);
+    			try {
+    				jedis = jedisPool.getResource();
+        			Long currentTotalLocationUpdates = 0l;
+        			if(jedis.get("totalLocationUpdates".getBytes()) != null) 
+        				currentTotalLocationUpdates = Long.parseLong(jedis.get("totalLocationUpdates"));
+        			
+        			Double  processingRate =  ((double)(currentTotalLocationUpdates - (double)lastTotalLocationUpdates));
+        			
+        			lastTotalLocationUpdates = currentTotalLocationUpdates;	 	 	
+        			
+        			jedis.set("processingRate",processingRate.toString());
+    			}
+    			finally {
+    				jedisPool.returnResource(jedis);
+    			}
+ 
     		}
     	}
     }

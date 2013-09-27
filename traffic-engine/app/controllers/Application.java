@@ -65,7 +65,7 @@ public class Application extends Controller {
 		String lastImei = "";
 		Integer updateSize = 0;
 		
-		BinaryJedis jedis = new BinaryJedis("localhost");
+		BinaryJedis jedis = jedisPool.getResource();
 		
 		while ((line = br.readLine()) != null) {
 			try {
@@ -155,6 +155,9 @@ public class Application extends Controller {
 		if(updateSize > 0) 
 			jedis.rpush("queue".getBytes(), locationUpdateBuilder.build().toByteArray());
 		
+		
+		jedisPool.returnResource(jedis);
+		
 		br.close();
 
 
@@ -222,31 +225,37 @@ public class Application extends Controller {
 	}
 	
 	public static void data() {
+
+		Jedis jedis = null;
 		
-		Jedis jedis = jedisPool.getResource();
+		try {
+			jedis = jedisPool.getResource();
 		
-		Long unprocessedLocationUpdates = jedis.llen("queue");
+			Long unprocessedLocationUpdates = jedis.llen("queue");
+			
+			Long totalLocationUpdates = 0l;
+			if(jedis.get("totalLocationUpdates") != null) 
+				totalLocationUpdates = Long.parseLong(jedis.get("totalLocationUpdates"));
 		
-		Long totalLocationUpdates = 0l;
-		if(jedis.get("totalLocationUpdates") != null) 
-			totalLocationUpdates = Long.parseLong(jedis.get("totalLocationUpdates"));
+			String processingRate = jedis.get("processingRate");
+			
+			Long totalObservations = 0l;
+			if(jedis.get("totalObservations") != null) 
+				totalObservations = Long.parseLong(jedis.get("totalObservations"));
+			
+			Integer vehicleCount = graph.getVehicleCount();
+			
+			Double observationsPerUpdate = 0.0;
+			
+			if(totalLocationUpdates != 0l)
+				observationsPerUpdate = (double) (totalObservations / totalLocationUpdates);
+			
+			render(unprocessedLocationUpdates, totalLocationUpdates, processingRate, totalObservations, vehicleCount, observationsPerUpdate);
+		}
+		finally {
+			jedisPool.returnResource(jedis);
+		}
 		
-		String processingRate = jedis.get("processingRate");
-		
-		Long totalObservations = 0l;
-		if(jedis.get("totalObservations") != null) 
-			totalObservations = Long.parseLong(jedis.get("totalObservations"));
-		
-		Integer vehicleCount = graph.getVehicleCount();
-		
-		Double observationsPerUpdate = 0.0;
-		
-		if(totalLocationUpdates != 0l)
-			observationsPerUpdate = (double) (totalObservations / totalLocationUpdates);
-		
-		render(unprocessedLocationUpdates, totalLocationUpdates, processingRate, totalObservations, vehicleCount, observationsPerUpdate);
-		
-		jedisPool.returnResource(jedis);
 	}
 	
 	public static void simulator() {
