@@ -166,6 +166,18 @@ function markerDragEnd() {
 	loadStats();
 }
 
+function saveRoute()
+{
+	$('#saveform_name').val('');
+	
+	$('#saveJourneyButton').on('click', function () {
+		
+		$('#journeySaveForm').submit();
+	});
+	
+	$('#saveJourney').modal();
+}
+
 function clearRoute()
 {
 	pathLayer.clearLayers();
@@ -191,17 +203,7 @@ function clearRoute()
 	}
 }
 
-function savePath()
-{
-	$('#saveform_name').val('');
-	
-	$('#saveJourneyButton').on('click', function () {
-		
-		$('#journeySaveForm').submit();
-	});
-	
-	$('#saveJourney').modal();
-}
+
 
 function loadPath()
 {
@@ -474,6 +476,89 @@ function loadJourney(originLat, originLon, destinationLat, destinationLon) {
 
 }
 
+
+function saveCsvPath() {
+
+	var queryParams = {
+		edgeIds: pathEdges
+	}
+	
+	if(compareMaxHour && !(compareMaxHour == 23 && compareMinHour == 0)) {
+		queryParams.minHour = compareMinHour;
+		queryParams.maxHour = compareMaxHour;
+	}
+
+	if(compareDays) {
+		queryParams.daysOfWeek = compareDays;
+	}
+
+	if($('#compareSelect').val() == 'CUSTOM' && compareFromDate && compareToDate) {
+		queryParams.fromDate = compareFromDate;	
+		queryParams.toDate = compareToDate;	
+	}
+
+	statsLoadPending = false;
+	
+	$('#compareObserverations').html('<img src="/public/images/loader.gif"/>');
+
+	$.get('/api/trafficStats', queryParams, function(data) {
+
+		var lines = []
+		lines.push(['edgeId','speed','observations']);
+		for(edge in data.edges) {
+
+			lines.push([edge,data.edges[edge].speed,data.edges[edge].obvs]);
+		}	
+
+		var csvStr = lines.join('\n');
+
+		var blob = new Blob([csvStr], {type: "text/csv;charset=utf-8"});
+		saveAs(blob, "path_edges.csv");
+		
+	});
+
+
+}
+
+function saveCsvAll() {
+
+	var queryParams = {
+	}
+	
+	if(compareMaxHour && !(compareMaxHour == 23 && compareMinHour == 0)) {
+		queryParams.minHour = compareMinHour;
+		queryParams.maxHour = compareMaxHour;
+	}
+
+	if(compareDays) {
+		queryParams.daysOfWeek = compareDays;
+	}
+
+	if($('#compareSelect').val() == 'CUSTOM' && compareFromDate && compareToDate) {
+		queryParams.fromDate = compareFromDate;	
+		queryParams.toDate = compareToDate;	
+	}
+
+	statsLoadPending = false;
+
+	$.get('/api/trafficStats', queryParams, function(data) {
+	
+		var lines = []
+		lines.push(['edgeId','speed','observations']);
+		for(edge in data.edges) {
+
+			lines.push([edge,data.edges[edge].speed,data.edges[edge].obvs]);
+		}	
+
+		var csvStr = lines.join('\n');
+
+		var blob = new Blob([csvStr], {type: "text/csv;charset=utf-8"});
+		saveAs(blob, "all_edges.csv");
+	});
+
+	
+}
+
 $(document).ready(function() {
 	
 	overlay = L.tileLayer(overlayUrl, mbOptions);
@@ -592,6 +677,12 @@ $(document).ready(function() {
 	
 	$('#comparisonView').hide();
 	
+	$('#saveButton').on('click', saveRoute);
+	$('#clearButton').on('click', clearRoute);
+
+	$('#saveCsvPath').on('click', saveCsvPath);
+	$('#saveCsvAll').on('click', saveCsvAll);
+
 	$('#saveButton').hide();
 	
 	$('#dataNotAvailable').hide();

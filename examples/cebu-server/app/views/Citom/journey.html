@@ -35,7 +35,7 @@ New message:
 	</div>
 	
 	<div style="position: absolute; top:10px; right:10px; width:250px;">
-		<div class="well well-small"><strong>Journey Estimate</strong> <span style="float: right;"><span id="saveButton"><a href="#" onclick="savePath();">Save</a> |</span> <a href="#" onclick="clearRoute();">Clear</a></span>
+		<div class="well well-small"><strong>Journey Estimate</strong> <span style="float: right;"><a href="#" id="saveButton">Save</a> | <a href="#" id="clearButton">Clear</a></span>
 		
 		<hr style="margin: 5px 0;">
 		<span id="clickIntro">Click the map to add start/end points.</span>
@@ -52,6 +52,7 @@ New message:
 		<h2 id="avgSpeed">--</h2>km/h
 		</div>
 		
+
 		<hr style="margin: 5px 0;">
 		
 		
@@ -124,14 +125,18 @@ New message:
 			<h3 id="avgSpeedDelta">--</h2>km/h
 			</div>
 		</div>
-		<br/>
-		<br/>
+		<hr style="margin: 5px 0;">
+		CSV Export: <a href="#" id="saveCsvPath">Path</a> | <a href="#" id="saveCsvAll">All</a>
+		<hr style="margin: 5px 0;">
 		<strong>Saved Journeys</strong> 
 		
 		
 		#{list items:saveJourneys, as:'journey'}
-				<hr style="margin: 5px 0;">
+				
+				<br/>
+				
 				${journey.name}<span style="float: right;"><a href="#" onclick="loadJourney(${journey.originLat}, ${journey.originLon}, ${journey.destinationLat}, ${journey.destinationLon});">View</a> | <a href="@{Citom.clearJourney(journey.id)}">Delete</a></span> <br/>
+
 				<!-- <div style="float: right; margin-left: 10px;">
 				<h3>${journey.time}</h3>mins</div>
 				
@@ -142,9 +147,13 @@ New message:
 				<div style="margin-left: 100px;">
 				<h3>${journey.speed}</h3>km/h
 				</div> -->
+				<hr style="margin: 5px 0;">
 		#{/list}
 				
-		<hr style="margin: 5px 0;">
+		#{if saveJourneys.size == 0}
+			<br/><em>No saved journeys.</em>
+		#{/if}
+	
 		
 		<br clear="all"/>
 		
@@ -187,6 +196,11 @@ New message:
   </div>
 </div>
 
+
+<script src="@{'/public/javascripts/jquery-ui.js'}"></script>
+
 <script src="@{'/public/javascripts/jquery-ui.js'}"></script>
 <script src="@{'/public/bootstrap/js/bootstrap-datepicker.js'}"></script>
 <script src="@{'/public/javascripts/cebu_journey.js'}"></script>
+<script src="@{'/public/javascripts/Blob.js'}"></script>
+<script src="@{'/public/javascripts/FileSaver.js'}"></script>
