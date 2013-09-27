@@ -12,14 +12,14 @@ import play.jobs.*;
 import play.test.*;
 import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 import util.GeoUtils;
 
 @OnApplicationStart(async=true)
 public class QueueSubscriberJob extends Job {
 	
-	private BinaryJedis jedis = new BinaryJedis("localhost");
-	private Jedis jedisStats = new Jedis("localhost");
+	private JedisPool jedisPool = new JedisPool("localhost");
 	
     public void doJob() {
     	
@@ -27,53 +27,54 @@ public class QueueSubscriberJob extends Job {
 
     	Date lastStatsUpdate = new Date();
     	Long lastTotalLocationUpdates = 0l;
-    	if(jedisStats.get("totalLocationUpdates") != null) 
-    		lastTotalLocationUpdates = Long.parseLong(jedisStats.get("totalLocationUpdates"));
+    	
+    	Jedis jedis = jedisPool.getResource();
+    	
+    	if(jedis.get("totalLocationUpdates") != null) 
+    		lastTotalLocationUpdates = Long.parseLong(jedis.get("totalLocationUpdates"));
+    	
+    	jedisPool.returnResource(jedis);
+
+    	while(true) {
     		
-    	try {
-	    	while(true) {
-	    		
-	    		byte[] queueVal = jedis.lpop("queue".getBytes());
-	    		
-	    		
-	    		
-	    		// wait for data if queue is empty
-	    		if(queueVal == null) {
-	    		
-	    			try {
-						Thread.sleep(1000);
-					} 
-	    			catch (InterruptedException e) {
-						// sleep failed
-					}
-	    		}
-	    		else {
-	    			
-	    			// process data
-	    			
-	    			// kick off location update worker thread to process data 
-		    		executor.execute(new LocationUpdateWorker(queueVal));
-	    			
-	    		}
-	    		
-	    		Long elapsedMs = (new Date().getTime() - lastStatsUpdate.getTime());
-	    		if(elapsedMs > 1000) {
-	    			
-	    			Long currentTotalLocationUpdates = 0l;
-	    			if(jedisStats.get("totalLocationUpdates".getBytes()) != null) 
-	    				currentTotalLocationUpdates = Long.parseLong(jedisStats.get("totalLocationUpdates"));
-	    			
-	    			Double  processingRate =  ((double)(currentTotalLocationUpdates - (double)lastTotalLocationUpdates));
-	    			
-	    			lastTotalLocationUpdates = currentTotalLocationUpdates;	 	 	
-	    			
-	    			jedisStats.set("processingRate",processingRate.toString());
-	    		}
-	    	}
-    	}
-    	finally {
-    		jedis.disconnect();
-    		jedisStats.disconnect();
+    		BinaryJedis jedisBinary = jedisPool.getResource();
+    		byte[] queueVal = jedisBinary.lpop("queue".getBytes());
+    		jedisPool.returnResource(jedisBinary);
+    		
+    		
+    		// wait for data if queue is empty
+    		if(queueVal == null) {
+    		
+    			try {
+					Thread.sleep(1000);
+				} 
+    			catch (InterruptedException e) {
+					// sleep failed
+				}
+    		}
+    		else {
+    			
+    			// process data
+    			
+    			// kick off location update worker thread to process data 
+	    		executor.execute(new LocationUpdateWorker(queueVal));
+    			
+    		}
+    		
+    		Long elapsedMs = (new Date().getTime() - lastStatsUpdate.getTime());
+    		if(elapsedMs > 1000) {
+    			jedis = jedisPool.getResource();
+    			Long currentTotalLocationUpdates = 0l;
+    			if(jedis.get("totalLocationUpdates".getBytes()) != null) 
+    				currentTotalLocationUpdates = Long.parseLong(jedis.get("totalLocationUpdates"));
+    			
+    			Double  processingRate =  ((double)(currentTotalLocationUpdates - (double)lastTotalLocationUpdates));
+    			
+    			lastTotalLocationUpdates = currentTotalLocationUpdates;	 	 	
+    			
+    			jedis.set("processingRate",processingRate.toString());
+    			jedisPool.returnResource(jedis);
+    		}
     	}
     }
 }
