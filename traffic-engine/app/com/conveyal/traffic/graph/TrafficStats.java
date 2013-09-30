@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import play.Logger;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import controllers.Application;
@@ -198,6 +199,9 @@ public class TrafficStats {
 					
 			}
 		}
+		catch (Exception e){
+			Logger.error("Could not fetchData: " + e.getMessage());
+		}		
 		finally {
 			jedisPool.pool.returnResource(jedisStats);
 		}
@@ -307,15 +311,18 @@ public class TrafficStats {
 		
 		try {
 		
-		String countStr = jedisStats.hget(countKey, edgeId.toString());
-		String speedStr = jedisStats.hget(speedKey, edgeId.toString());
-		
-		
-		if(countStr != null && !countStr.isEmpty() && speedStr != null && speedStr.isEmpty()) {
-			speed = (Double)(Long.parseLong(speedStr) / Long.parseLong(countStr) / 100.0); 
+			String countStr = jedisStats.hget(countKey, edgeId.toString());
+			String speedStr = jedisStats.hget(speedKey, edgeId.toString());
+			
+			
+			if(countStr != null && !countStr.isEmpty() && speedStr != null && speedStr.isEmpty()) {
+				speed = (Double)(Long.parseLong(speedStr) / Long.parseLong(countStr) / 100.0); 
+			}
+			
 		}
-		
-		}
+		catch (Exception e){
+			Logger.error("Could not getEdgeSpeed data: " + e.getMessage());
+		}	
 		finally {
 			jedisPool.pool.returnResource(jedisStats);
 		}
@@ -382,6 +389,9 @@ public class TrafficStats {
 			
 			
 		}
+		catch (Exception e){
+			Logger.error("Could not log updateEdgeStats: " + e.getMessage());
+		}		
 		finally {
 			jedisPool.pool.returnResource(jedisStats);
 		}

@@ -2,6 +2,7 @@ package jobs;
 
 import java.util.Date;
 
+import play.Logger;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import util.GeoUtils;
@@ -61,6 +62,9 @@ public class LocationUpdateWorker implements Runnable {
 				
 				try {
 					jedis.incrBy("totalLocationUpdates", locationUpdate.getLocationList().size());	
+				}
+				catch (Exception e){
+					Logger.error("Could not log totalLocationUpdates increment: " + e.getMessage());
 				}
 				finally {
 					jedisPool.pool.returnResource(jedis);
