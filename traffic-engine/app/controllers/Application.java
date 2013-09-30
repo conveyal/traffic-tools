@@ -31,6 +31,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 
 import com.conveyal.traffic.graph.MovementEdge;
+import com.conveyal.traffic.graph.StatsPool;
 import com.conveyal.traffic.graph.TrafficGraph;
 import com.conveyal.traffic.graph.TrafficStats;
 import com.conveyal.traffic.graph.TrafficStatsResponse;
@@ -47,7 +48,7 @@ public class Application extends Controller {
 	
 	public static MapListener mapListeners = new MapListener();
 	
-	public static JedisPool jedisPool = new JedisPool("localhost");
+	public static StatsPool jedisPool = new StatsPool();
 
 	public static void loadCsv(File csvFile) throws IOException {
 		
@@ -65,100 +66,106 @@ public class Application extends Controller {
 		String lastImei = "";
 		Integer updateSize = 0;
 		
-		BinaryJedis jedis = jedisPool.getResource();
+		BinaryJedis jedis = jedisPool.pool.getResource();
 		
-		while ((line = br.readLine()) != null) {
-			try {
-				String[] lineParts = line.split(",");
-	
-			    String imei = lineParts[0].trim();
-			    
-			    if(locationUpdateBuilder == null) {
-			    	locationUpdateBuilder = TrafficProbeProtos.LocationUpdate.newBuilder();
-			    }
-			    else if(!imei.equals(lastImei) || updateSize > 10) {
-			    	
-			    	// flush updates 
-			    	
-			    	jedis.rpush("queue".getBytes(), locationUpdateBuilder.build().toByteArray());
-			    	
-			    	locationUpdateBuilder = TrafficProbeProtos.LocationUpdate.newBuilder();
-			    	
-			    	updateSize = 0;
-			    }
-			    
-		    	if(!lastTime.containsKey(imei)) {
-			    	lastTime.put(imei, 0l);
-			    	timeCorrection.put(imei, 0l);
-			    }
-		    	Long ms = null;
-		    		
-			    try {
-			    	ms = Long.parseLong(lineParts[1].trim());
-			    } 
-			    catch(NumberFormatException ne) {
-			    	Double secondsDouble = Double.parseDouble(lineParts[1].trim());
-			    	ms = secondsDouble.longValue() * 1000;
-			    }
-			    
-			    // convert to milliseconds if in seconds
-			    if(ms < 10000000000l)
-			    	ms = ms * 1000;
-			    
-			    // correct times on sequence values missing increment without location updates
-			    if(lastTime.get(imei).equals(ms)) {
-			    	Long tc = timeCorrection.get(imei);
-			    	tc += 5000;
-			    	ms += tc;
-			    	timeCorrection.put(imei, tc);
-			    }
-			    else {
-			    	timeCorrection.put(imei, 0l);
-			    	lastTime.put(imei, ms);
-			    }
-			    
-			    Long lt = lastTime.get(imei);
-			    
-			    Double lat = Double.parseDouble(lineParts[2].trim());
-				Double lon = Double.parseDouble(lineParts[3].trim());
-				
-				TrafficProbeProtos.LocationUpdate.Location.Builder locationBuilder = TrafficProbeProtos.LocationUpdate.Location.newBuilder();
+		try {
+			while ((line = br.readLine()) != null) {
+				try {
+					String[] lineParts = line.split(",");
+		
+				    String imei = lineParts[0].trim();
 				    
-				locationBuilder.setLat(lat.floatValue());
-				locationBuilder.setLon(lon.floatValue());
-				
-				Long timeOffset = ms - lt;
-				
-				// protocol buffer def assumes timeOffset in milliseconds is within bound of int32
-				locationBuilder.setTimeoffset((int)(long)timeOffset);
-	
-				locationUpdateBuilder.addLocation(locationBuilder);
-				
-				Long vehicleId = Application.graph.getVehicleId(imei);
-				
-				locationUpdateBuilder.setPhone(vehicleId);
-				locationUpdateBuilder.setTime(ms);
-				
-				Date time = new Date(ms);
-				
-				Logger.info(imei + "," + time  + "," + lat  + "," + lon);
-							
-				lastImei = imei;
-			    updateSize++;
+				    if(locationUpdateBuilder == null) {
+				    	locationUpdateBuilder = TrafficProbeProtos.LocationUpdate.newBuilder();
+				    }
+				    else if(!imei.equals(lastImei) || updateSize > 10) {
+				    	
+				    	// flush updates 
+				    	
+				    	jedis.rpush("queue".getBytes(), locationUpdateBuilder.build().toByteArray());
+				    	
+				    	locationUpdateBuilder = TrafficProbeProtos.LocationUpdate.newBuilder();
+				    	
+				    	updateSize = 0;
+				    }
+				    
+			    	if(!lastTime.containsKey(imei)) {
+				    	lastTime.put(imei, 0l);
+				    	timeCorrection.put(imei, 0l);
+				    }
+			    	Long ms = null;
+			    		
+				    try {
+				    	ms = Long.parseLong(lineParts[1].trim());
+				    } 
+				    catch(NumberFormatException ne) {
+				    	Double secondsDouble = Double.parseDouble(lineParts[1].trim());
+				    	ms = secondsDouble.longValue() * 1000;
+				    }
+				    
+				    // convert to milliseconds if in seconds
+				    if(ms < 10000000000l)
+				    	ms = ms * 1000;
+				    
+				    // correct times on sequence values missing increment without location updates
+				    if(lastTime.get(imei).equals(ms)) {
+				    	Long tc = timeCorrection.get(imei);
+				    	tc += 5000;
+				    	ms += tc;
+				    	timeCorrection.put(imei, tc);
+				    }
+				    else {
+				    	timeCorrection.put(imei, 0l);
+				    	lastTime.put(imei, ms);
+				    }
+				    
+				    Long lt = lastTime.get(imei);
+				    
+				    Double lat = Double.parseDouble(lineParts[2].trim());
+					Double lon = Double.parseDouble(lineParts[3].trim());
+					
+					TrafficProbeProtos.LocationUpdate.Location.Builder locationBuilder = TrafficProbeProtos.LocationUpdate.Location.newBuilder();
+					    
+					locationBuilder.setLat(lat.floatValue());
+					locationBuilder.setLon(lon.floatValue());
+					
+					Long timeOffset = ms - lt;
+					
+					// protocol buffer def assumes timeOffset in milliseconds is within bound of int32
+					locationBuilder.setTimeoffset((int)(long)timeOffset);
+		
+					locationUpdateBuilder.addLocation(locationBuilder);
+					
+					Long vehicleId = Application.graph.getVehicleId(imei);
+					
+					locationUpdateBuilder.setPhone(vehicleId);
+					locationUpdateBuilder.setTime(ms);
+					
+					Date time = new Date(ms);
+					
+					Logger.info(imei + "," + time  + "," + lat  + "," + lon);
+								
+					lastImei = imei;
+				    updateSize++;
+				}
+				catch(Exception e) {
+					Logger.warn("Couldn't parse CSV line: " + line);
+				}
 			}
-			catch(Exception e) {
-				Logger.warn("Couldn't parse CSV line: " + line);
-			}
+			
+			// flush updates
+			if(updateSize > 0) 
+				jedis.rpush("queue".getBytes(), locationUpdateBuilder.build().toByteArray());
+			
+		}	
+		finally {
+			
+			jedisPool.pool.returnResource(jedis);
+			
+			br.close();
+
 		}
 		
-		// flush updates
-		if(updateSize > 0) 
-			jedis.rpush("queue".getBytes(), locationUpdateBuilder.build().toByteArray());
-		
-		
-		jedisPool.returnResource(jedis);
-		
-		br.close();
 
 
 		data();
@@ -223,10 +230,9 @@ public class Application extends Controller {
 	
 	public static void data() {
 
-		Jedis jedis = null;
+		Jedis jedis = jedisPool.pool.getResource();
 		
 		try {
-			jedis = jedisPool.getResource();
 		
 			Long unprocessedLocationUpdates = jedis.llen("queue");
 			
@@ -250,7 +256,7 @@ public class Application extends Controller {
 			render(unprocessedLocationUpdates, totalLocationUpdates, processingRate, totalObservations, vehicleCount, observationsPerUpdate);
 		}
 		finally {
-			jedisPool.returnResource(jedis);
+			jedisPool.pool.returnResource(jedis);
 		}
 		
 	}
