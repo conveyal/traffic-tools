@@ -6,6 +6,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import util.GeoUtils;
 
+import com.conveyal.traffic.graph.StatsPool;
 import com.conveyal.traffic.graph.VehicleObservation;
 import com.conveyal.trafficprobe.TrafficProbeProtos.LocationUpdate;
 import com.conveyal.trafficprobe.TrafficProbeProtos.LocationUpdate.Location;
@@ -16,7 +17,7 @@ import controllers.Application;
 
 public class LocationUpdateWorker implements Runnable {
 
-	static JedisPool jedisPool = new JedisPool("localhost");
+	static StatsPool jedisPool = new StatsPool();
 	
 	byte[] data = null;
 	
@@ -56,9 +57,15 @@ public class LocationUpdateWorker implements Runnable {
 					Application.graph.updateVehicle(vehicleId, vo);
 				}
 				
-				Jedis jedis = jedisPool.getResource();
-				jedis.incrBy("totalLocationUpdates", locationUpdate.getLocationList().size());
-				jedisPool.returnResource(jedis);
+				Jedis jedis = jedisPool.pool.getResource();
+				
+				try {
+					jedis.incrBy("totalLocationUpdates", locationUpdate.getLocationList().size());	
+				}
+				finally {
+					jedisPool.pool.returnResource(jedis);
+				}
+				
 			}
 				
 		} catch (InvalidProtocolBufferException e) {
