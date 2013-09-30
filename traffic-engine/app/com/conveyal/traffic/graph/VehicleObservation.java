@@ -52,16 +52,15 @@ public class VehicleObservation {
 	public String mapEvent() throws JsonGenerationException, IOException {
 	
 		
-		/*MapEventData med = new MapEventData();
+		MapEventData med = new MapEventData();
 		
 		med.message = "";
 		med.type = "VehicleObservation";
 		med.geom = GeoUtils.geometryFactory.createPoint(GeoUtils.convertToLonLat(position));
 
 		ObjectMapper mapper = new ObjectMapper();
-		
-		Application.pw.println(mapper.writeValueAsString(med) + ","); */
-		return "";
+
+		return mapper.writeValueAsString(med);
 	
 	}
 }
