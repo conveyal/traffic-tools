@@ -21,13 +21,13 @@ import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.JsonSerializer;
 import org.codehaus.jackson.map.SerializerProvider;
+import org.geotools.geojson.feature.FeatureJSON;
 import org.geotools.geojson.geom.GeometryJSON;
 import org.geotools.geometry.jts.JTS;
 import org.opengis.geometry.MismatchedDimensionException;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.NoninvertibleTransformException;
 import org.opengis.referencing.operation.TransformException;
-
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
@@ -48,8 +48,10 @@ public class GeoJSONSerializer extends JsonSerializer<MapEventData> {
       jgen.writeRawValue(null);
       return;
     }
-
-    final GeometryJSON json = new GeometryJSON();
+    
+    int decimals = 7; 
+   
+    final GeometryJSON json = new GeometryJSON(decimals);
     jgen.writeStartObject();
     jgen.writeFieldName("type");
     jgen.writeString(value.type);
