@@ -4,6 +4,7 @@ var mbUrl = 'http://{s}.tiles.mapbox.com/v3/conveyal.map-o1bd1xee/{z}/{x}/{y}.pn
 
 var overlayUrl = 'http://{s}.tiles.mapbox.com/v3/conveyal.map-p0tdb7j3/{z}/{x}/{y}.png';
 
+var geoJsonOverlay;
 
 var mbAttrib = 'Traffic overlay powered by OpenPlans Vehicle Tracking Tools, Map tiles &copy; Mapbox (terms).';
 var mbOptions = {
@@ -41,13 +42,11 @@ function clearSimulation() {
 
 $(document).ready(function() {
 	
-  map = new L.map('map').setView([38.8921, -77.0455], 15);
+  map = new L.map('map').setView([10.2977,123.8973], 14);
 
   L.tileLayer(mbUrl, mbOptions).addTo(map);
 
 	geoJsonOverlay = L.layerGroup();
 	geoJsonOverlay.addTo(map);
-	
-	loadData();
 
 });
