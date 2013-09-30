@@ -67,7 +67,7 @@ public class VehicleState {
 		synchronized(this) { 
 			
 			try {
-				currentObservation.mapEvent();
+				MapEvent.instance.event.publish(currentObservation.mapEvent());
 			}
 			catch(Exception e) {
 				e.printStackTrace();
