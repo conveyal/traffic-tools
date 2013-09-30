@@ -9,7 +9,6 @@ import util.GeoUtils;
 import util.MapEventData;
 import util.MapListener;
 import util.ProjectedCoordinate;
-import util.TrafficStatsResponse;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -34,6 +33,7 @@ import org.springframework.context.support.GenericApplicationContext;
 import com.conveyal.traffic.graph.MovementEdge;
 import com.conveyal.traffic.graph.TrafficGraph;
 import com.conveyal.traffic.graph.TrafficStats;
+import com.conveyal.traffic.graph.TrafficStatsResponse;
 import com.conveyal.traffic.graph.VehicleObservation;
 import com.conveyal.traffic.graph.VehicleState;
 import com.typesafe.config.ConfigFactory;
@@ -216,11 +216,8 @@ public class Application extends Controller {
 			
 		TrafficStats stats = new TrafficStats(from, to, days, minHour, maxHour, filteredEdges);
 		
-		TrafficStatsResponse response = new TrafficStatsResponse();
-		
-		response.edges = stats.getEdgeSpeeds(null);
-		response.totalObservations = stats.getTotalObservations();
-		
+		TrafficStatsResponse response = stats.getEdgeSpeeds(null);
+	
 		renderJSON(response);
 	}
 	
