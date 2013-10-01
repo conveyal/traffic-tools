@@ -15,15 +15,19 @@ public class Ws extends WebSocketController {
     
 	 public static void map() throws InterruptedException {
 		 
+		 	Application.mapListeners.addListener();
+		 
+		 	Logger.info("connecting ws.");
+		 	
 	        while(inbound.isOpen()) {
-	            
-	        	Application.mapListeners.addListener();
-	        	
+	            	
 	        	String event = await(MapEvent.instance.event.nextEvent());
 	        
 	        	outbound.send(event);
 	        	
 	        }
+	        
+	        Logger.info("disconnecting ws.");
 	        
 	        Application.mapListeners.removeListener();
 	        
