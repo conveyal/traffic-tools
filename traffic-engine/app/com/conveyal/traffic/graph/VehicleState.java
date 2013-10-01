@@ -46,15 +46,8 @@ public class VehicleState {
 	private Set<Integer> sPaired = new HashSet<Integer>();
 	
 	private HashMap<Integer, TripLineCrossing> t1Crossings = new HashMap<Integer, TripLineCrossing>();
-	private HashMap<Integer, TrafficEdgeTraversal> t2Crossings = new HashMap<Integer, TrafficEdgeTraversal>();
 	
-	private HashMap<Integer, TrafficEdgeTraversal> upstreamCrossings = new HashMap<Integer, TrafficEdgeTraversal>();
-	private LinkedList<TrafficEdgeTraversal> crossingList = new LinkedList<TrafficEdgeTraversal>();
-	
-	// map of last tl1 crossings times for each edge
-	private TreeMap<Long, Set<Integer>> t1CrossingTimes = new TreeMap<Long, Set<Integer>>();
-	private TreeMap<Long, Set<Integer>> t2CrossingTimes = new TreeMap<Long, Set<Integer>>();
-	private TreeMap<Long, Set<Integer>> upstreamCrossingTimes = new TreeMap<Long, Set<Integer>>();
+	private TrafficEdgePath currentPath = new TrafficEdgePath();
 	
 	public VehicleState(Long id, TrafficGraph g) {
 		graph = g;
@@ -81,83 +74,182 @@ public class VehicleState {
 					Logger.info(c1.toString() + " < " + c2.toString());
 					throw new ObservationOutOfOrderException(lastObservation, currentObservation);
 				}
-				
-				purgeCrossings(lastObservation.getTime() - MAX_OBSERVATION_AGE);
-				
+			
+				// find edge for current VO pair
 				MovementEdge me = new MovementEdge(lastObservation, currentObservation);
 				
-				// update tl1 crossing list	
+				// get tl crossings
 				List<TripLineCrossing> t1cs = graph.getTraffEdgeIndex().findTl1TrafficEdges(me);
+				List<TripLineCrossing> t2cs = graph.getTraffEdgeIndex().findTl2TrafficEdges(me);
 				
-				for(TripLineCrossing t1crossing : t1cs) {
-					t1Crossings.put(t1crossing.getEdgeId(), t1crossing);
-					
-					addEdgeId(t1CrossingTimes, t1crossing.getTimeAtCrossing(), t1crossing.getEdgeId());
-					
-					
-					//t1CrossingTimes.put(t1crossing.getTimeAtCrossing(), t1crossing.getEdgeId());
-					
-					//Logger.info("TL1 crossing for: " + t1crossing.getEdgeId());
-				}
+				Boolean firstThrough = true;
+				Boolean pathChanged = false;
 				
-				// find tl2 crossings
-				ArrayList<TripLineCrossing> t2cs = graph.getTraffEdgeIndex().findTl2TrafficEdges(me);
-				
-				// order crossing list by time
-				Collections.sort(t2cs);
-				
-				// iterate through tl2 crossings and find edge traversals
-				for(TripLineCrossing t2crossing : t2cs) {
+				do {
 					
-					//Logger.info("TL2 crossing for: " + t2crossing.getEdgeId());
-					
-					if(t1Crossings.containsKey(t2crossing.getEdgeId())){
+					if(firstThrough || pathChanged) {
 						
-						TripLineCrossing t1crossing = t1Crossings.get(t2crossing.getEdgeId());
+						firstThrough = false;
+						pathChanged = false;
 						
-						try {
-							TrafficEdgeTraversal tet = t1crossing.getTrafficEdgeTraversal(t2crossing);
+						for(TripLineCrossing t2crossing : t2cs) {
 							
-							if(simulate) {
-								sTraversed.add(tet.getParentEdge().getId());
-								sTraversedDist += tet.getTravelDistance();
-								sTraversedTime += tet.getTravelTime();
-							}
+							//  find t2c crossing matching t1 crossings
+							if(t1Crossings.containsKey(t2crossing.getEdgeId())) {
 							
-							if(!findPair(tet)) {
-								t2Crossings.put(tet.getParentEdge().getId(), tet);
+								Logger.info("matching TL2 crossing for: " + t2crossing.getEdgeId());
 								
-								for(Integer id : tet.getParentEdge().getDownstreamEdgeIds()) {
-									upstreamCrossings.put(id, tet);
+								TripLineCrossing t1crossing = t1Crossings.get(t2crossing.getEdgeId());
+								
+								try {
 									
-									addEdgeId(upstreamCrossingTimes, tet.getTlc1().getTimeAtCrossing(), id);
-									//upstreamCrossingTimes.put(tet.getTlc1().getTimeAtCrossing(), id);
+									// make a traversal and added to path
+									TrafficEdgeTraversal tet = t1crossing.getTrafficEdgeTraversal(t2crossing);
+									
+									currentPath.addTraversal(tet);
+									
+									pathChanged = true;
+									
+									// clear t1 crossings and start fresh
+									t1Crossings.clear();
+									
+									if(simulate) {
+										sTraversed.add(tet.getParentEdge().getId());
+										sTraversedDist += tet.getTravelDistance();
+										sTraversedTime += tet.getTravelTime();
+									}
+									
+								} 
+								catch (InvalidTraverseException e) {
+									
+									// not a valid traversal, skipping but still remove old tl1 crossings
+									t1Crossings.clear();
+								
+									continue;
 								}
-							
-								addEdgeId(t2CrossingTimes, tet.getTlc1().getTimeAtCrossing(), tet.getParentEdge().getId());
-								//t2CrossingTimes.put(tet.getTlc1().getTimeAtCrossing(), tet.getParentEdge().getId());
 							}
-							else
-								// purge everything prior to latest tl2 crossing
-								purgeCrossings(t2crossing.getTimeAtCrossing());
-							
-						} 
-						catch (InvalidTraverseException e) {
-							// not a valid traversal, skiping but still remove old tl1 crossings
-							
-							purgeCrossings(t1crossing.getTimeAtCrossing());
 						}
 						
+						// check t2 crossings for those matching end of current path
+						for(TripLineCrossing t1crossing : t1cs) {
+					
+							if(!t1Crossings.containsKey(t1crossing.getEdgeId()) && !currentPath.edgeTraversed(t1crossing.getEdgeId())) {
+								pathChanged = true;
+								t1Crossings.put(t1crossing.getEdgeId(), t1crossing);
+								Logger.info("TL1 crossing for: " + t1crossing.getEdgeId());
+							}
+							
+						}
 					}
+					 	
+				} while(pathChanged);
+				
+				if(currentPath.length() > 1) {
+					
+					// if path is a pair (or longer) save and clear
+
+					Logger.info("Saving path for "  + currentPath.length() + " edges.");
+					
+					if(simulate) {
+						
+						for(TrafficEdgeTraversal tet : currentPath.getTraversalList()) {
+							sPaired.add(tet.getParentEdge().getId());
+						}
+						
+						sPairedDist += currentPath.getTravelDistance();
+						sPairedTime += currentPath.getTravelTime();
+					}
+					
+					currentPath.saveStats();
+					currentPath.clear();
+					
+					
+					
+				}
+				else if(currentPath.length() == 1 && t1Crossings.size() > 10) {
+					// if we're collecting lots of t1Crossings that don't match current path reset path...
+					Logger.info("Too many tl1s, clearing path");
+					currentPath.clear();
 				}
 				
-				
 			}
-		
-			
-			lastObservation = currentObservation;
 		}
+		
+		lastObservation = currentObservation;
 	}
+	
+//	
+//		
+//		purgeCrossings(lastObservation.getTime() - MAX_OBSERVATION_AGE);
+//		
+//		MovementEdge me = new MovementEdge(lastObservation, currentObservation);
+//		
+//		// update tl1 crossing list	
+//		List<TripLineCrossing> t1cs = graph.getTraffEdgeIndex().findTl1TrafficEdges(me);
+//		
+//		for(TripLineCrossing t1crossing : t1cs) {
+//			t1Crossings.put(t1crossing.getEdgeId(), t1crossing);
+//			
+//			addEdgeId(t1CrossingTimes, t1crossing.getTimeAtCrossing(), t1crossing.getEdgeId());
+//			
+//			
+//			//t1CrossingTimes.put(t1crossing.getTimeAtCrossing(), t1crossing.getEdgeId());
+//			
+//			//Logger.info("TL1 crossing for: " + t1crossing.getEdgeId());
+//		}
+//		
+//		// find tl2 crossings
+//		ArrayList<TripLineCrossing> t2cs = graph.getTraffEdgeIndex().findTl2TrafficEdges(me);
+//		
+//		// order crossing list by time
+//		Collections.sort(t2cs);
+//		
+//		// iterate through tl2 crossings and find edge traversals
+//		for(TripLineCrossing t2crossing : t2cs) {
+//			
+//			//Logger.info("TL2 crossing for: " + t2crossing.getEdgeId());
+//			
+//			if(t1Crossings.containsKey(t2crossing.getEdgeId())){
+//				
+//				TripLineCrossing t1crossing = t1Crossings.get(t2crossing.getEdgeId());
+//				
+//				try {
+//					TrafficEdgeTraversal tet = t1crossing.getTrafficEdgeTraversal(t2crossing);
+//					
+//					
+//					
+//					if(!findPair(tet)) {
+//						t2Crossings.put(tet.getParentEdge().getId(), tet);
+//						
+//						for(Integer id : tet.getParentEdge().getDownstreamEdgeIds()) {
+//							upstreamCrossings.put(id, tet);
+//							
+//							addEdgeId(upstreamCrossingTimes, tet.getTlc1().getTimeAtCrossing(), id);
+//							//upstreamCrossingTimes.put(tet.getTlc1().getTimeAtCrossing(), id);
+//						}
+//					
+//						addEdgeId(t2CrossingTimes, tet.getTlc1().getTimeAtCrossing(), tet.getParentEdge().getId());
+//						//t2CrossingTimes.put(tet.getTlc1().getTimeAtCrossing(), tet.getParentEdge().getId());
+//					}
+//					else
+//						// purge everything prior to latest tl2 crossing
+//						purgeCrossings(t2crossing.getTimeAtCrossing());
+//					
+//				} 
+//				catch (InvalidTraverseException e) {
+//					// not a valid traversal, skiping but still remove old tl1 crossings
+//					
+//					purgeCrossings(t1crossing.getTimeAtCrossing());
+//				}
+//				
+//			}
+//		}
+//		
+//		
+//	}
+//
+//	
+//	lastObservation = currentObservation;
 	
 	// for simulation -- applies a m/s velocity to a given path
 	public void simulateUpdatePosition(List<Integer> edges, Double velocity) {
@@ -175,14 +267,11 @@ public class VehicleState {
 		sPaired = new HashSet<Integer>();
 		
 		t1Crossings.clear();
-		t2Crossings.clear();
-		upstreamCrossings.clear();
-		t1CrossingTimes.clear();
-		t2CrossingTimes.clear();
-		upstreamCrossingTimes.clear();
+
+		Logger.info("Starting simulator for " + edges.size() + " lines.");
 		
     	LineString path = graph.getPathForEdges(edges, SIMULATION_GPS_SPACING, SIMULATION_GPS_ERROR);
-    	LineString path2 = graph.getPathForEdges(edges);
+    
 		for(Coordinate c : path.getCoordinates()) {
 			ProjectedCoordinate currentCoord = GeoUtils.convertLonLatToEuclidean(c);
 			VehicleObservation currentObservation = null;
@@ -198,12 +287,6 @@ public class VehicleState {
 				
 			try {
 				updatePosition(currentObservation);
-				try {
-					Thread.sleep(50);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 			}
 			catch(ObservationOutOfOrderException e) {
 				// this should only happen if multiple updates are being performed on the same VehicleState at the same time
@@ -257,113 +340,104 @@ public class VehicleState {
 			"\t" + traversedVelocity + " m/s average traversed\n" +
 			"\t" + pairedVelocity + " m/s average paired"); 
 
-		//PathEdge pe = new PathEdge();
-		//pe.shape = path;
-		//pe.save();	
-		
-//		Logger.info("t1Crossings: " + t1Crossings.keySet().size());
-//		Logger.info("t2Crossings: " + t2Crossings.keySet().size());
-//		Logger.info("upstreamCrossings: " + upstreamCrossings.keySet().size());
-//		Logger.info("t1CrossingTimes: " + t1CrossingTimes.keySet().size());
-//		Logger.info("t2CrossingTimes: " + t2CrossingTimes.keySet().size());
-//		Logger.info("upstreamCrossingTimes: " + upstreamCrossingTimes.keySet().size());
-	}
-	
-	private boolean findPair(TrafficEdgeTraversal tet2) {
-		
-		if(upstreamCrossings.containsKey(tet2.getParentEdge().getId())) {
-			
-			TrafficEdgeTraversal tet1 = upstreamCrossings.get(tet2.getParentEdge().getId());
-			
-			TrafficEdgePair pair = tet1.pair(tet2);
 
-			Double averageSpeed = pair.getTravelDistance() / (pair.getTravelTime() / 1000);
-			
-			if(averageSpeed > 50.0)
-				Logger.warn("Average Speed exceeds 50 m/s");
-			else {
-				Date d = new Date(tet1.getTlc2().getTimeAtCrossing());
-		        
-				TrafficStats.updateEdgeStats(tet1.getParentEdge().getId(), d, averageSpeed);
-				TrafficStats.updateEdgeStats(tet2.getParentEdge().getId(), d, averageSpeed);
-			}
-			
-			
-			if(simulate) {
-				sPaired.add(tet1.getParentEdge().getId());
-				sPaired.add(tet2.getParentEdge().getId());
-				
-				sPairedDist += pair.getTravelDistance();
-				sPairedTime += pair.getTravelTime();
-			}
-			
-			// update crossing list
-			int cls = crossingList.size();
-			
-			if(cls == 4) {
-			
-				crossingList.poll();
-				crossingList.poll();
-			} 
-			else if(cls == 3) {
-				crossingList.poll();
-			}
-			
-			crossingList.add(tet1);
-			crossingList.add(tet2);
-			
-			if(crossingList.size() == 4) {	
-				graph.updatePaths(crossingList);
-			}
-			
-			return true;
-		}
-		else 
-			return false;
-		
 	}
 	
-	private void purgeCrossings(Long purgeTime) {
-	
-		// get all crossings before purgeTime and remove from crossing lists...
-		
-		SortedMap<Long, Set<Integer>> edgeIdSetsToRemove = t1CrossingTimes.headMap(purgeTime);
-		
-		for(Set<Integer> edgeIds : edgeIdSetsToRemove.values()) {
-			for(Integer edgeId: edgeIds) {
-				t1Crossings.remove(edgeId);
-			}
-		}
-		
-		edgeIdSetsToRemove.clear();
-		
-		edgeIdSetsToRemove = t2CrossingTimes.headMap(purgeTime);
-		
-		for(Set<Integer> edgeIds : edgeIdSetsToRemove.values()) {
-			for(Integer edgeId: edgeIds) {
-				t2Crossings.remove(edgeId);
-			}
-		}
-		
-		edgeIdSetsToRemove.clear();
-		
-		edgeIdSetsToRemove = upstreamCrossingTimes.headMap(purgeTime);
-		
-		for(Set<Integer> edgeIds : edgeIdSetsToRemove.values()) {
-			for(Integer edgeId: edgeIds) {
-				upstreamCrossings.remove(edgeId);
-			}
-		}
-		
-		edgeIdSetsToRemove.clear();
-	}
-	
-	private static void addEdgeId(TreeMap<Long, Set<Integer>> map, Long time, Integer id) {
-		if(!map.containsKey(time))
-			map.put(time, new HashSet<Integer>());
-		
-		map.get(time).add(id);
-		
-	}
+//	private boolean findPair(TrafficEdgeTraversal tet2) {
+//		
+//		if(upstreamCrossings.containsKey(tet2.getParentEdge().getId())) {
+//			
+//			TrafficEdgeTraversal tet1 = upstreamCrossings.get(tet2.getParentEdge().getId());
+//			
+//			TrafficEdgePath pair = tet1.pair(tet2);
+//
+//			Double averageSpeed = pair.getTravelDistance() / (pair.getTravelTime() / 1000);
+//			
+//			if(averageSpeed > 50.0)
+//				Logger.warn("Average Speed exceeds 50 m/s");
+//			else {
+//				Date d = new Date(tet1.getTlc2().getTimeAtCrossing());
+//		        
+//				TrafficStats.updateEdgeStats(tet1.getParentEdge().getId(), d, averageSpeed);
+//				TrafficStats.updateEdgeStats(tet2.getParentEdge().getId(), d, averageSpeed);
+//			}
+//			
+//			
+//			if(simulate) {
+//				sPaired.add(tet1.getParentEdge().getId());
+//				sPaired.add(tet2.getParentEdge().getId());
+//				
+//				sPairedDist += pair.getTravelDistance();
+//				sPairedTime += pair.getTravelTime();
+//			}
+//			
+//			// update crossing list
+//			int cls = crossingList.size();
+//			
+//			if(cls == 4) {
+//			
+//				crossingList.poll();
+//				crossingList.poll();
+//			} 
+//			else if(cls == 3) {
+//				crossingList.poll();
+//			}
+//			
+//			crossingList.add(tet1);
+//			crossingList.add(tet2);
+//			
+//			if(crossingList.size() == 4) {	
+//				graph.updatePaths(crossingList);
+//			}
+//			
+//			return true;
+//		}
+//		else 
+//			return false;
+//		
+//	}
+//	
+//	private void purgeCrossings(Long purgeTime) {
+//	
+//		// get all crossings before purgeTime and remove from crossing lists...
+//		
+//		SortedMap<Long, Set<Integer>> edgeIdSetsToRemove = t1CrossingTimes.headMap(purgeTime);
+//		
+//		for(Set<Integer> edgeIds : edgeIdSetsToRemove.values()) {
+//			for(Integer edgeId: edgeIds) {
+//				t1Crossings.remove(edgeId);
+//			}
+//		}
+//		
+//		edgeIdSetsToRemove.clear();
+//		
+//		edgeIdSetsToRemove = t2CrossingTimes.headMap(purgeTime);
+//		
+//		for(Set<Integer> edgeIds : edgeIdSetsToRemove.values()) {
+//			for(Integer edgeId: edgeIds) {
+//				t2Crossings.remove(edgeId);
+//			}
+//		}
+//		
+//		edgeIdSetsToRemove.clear();
+//		
+//		edgeIdSetsToRemove = upstreamCrossingTimes.headMap(purgeTime);
+//		
+//		for(Set<Integer> edgeIds : edgeIdSetsToRemove.values()) {
+//			for(Integer edgeId: edgeIds) {
+//				upstreamCrossings.remove(edgeId);
+//			}
+//		}
+//		
+//		edgeIdSetsToRemove.clear();
+//	}
+//	
+//	private static void addEdgeId(TreeMap<Long, Set<Integer>> map, Long time, Integer id) {
+//		if(!map.containsKey(time))
+//			map.put(time, new HashSet<Integer>());
+//		
+//		map.get(time).add(id);
+//		
+//	} 
 	
 }

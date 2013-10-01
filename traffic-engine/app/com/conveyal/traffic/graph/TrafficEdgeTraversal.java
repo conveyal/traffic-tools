@@ -27,13 +27,14 @@ public class TrafficEdgeTraversal {
 		tlc2 = tl2;
 				
 		if(tl1.getEdgeId().equals(tl2.getEdgeId()) && tl1.isType(TripLine.TRIPLINE_1) && tl2.isType(TripLine.TRIPLINE_2) && tl2.getTimeAtCrossing()  > tl1.getTimeAtCrossing()) {
+			
 			parentEdge = tl1.getTripLine().getParentEdge();
 			
 			travelTime = tl2.getTimeAtCrossing() - tl1.getTimeAtCrossing();
 			velocity = tl1.getTripLine().getParentEdge().getTlLength() / (travelTime / 1000);
 			
 			//Logger.info("Edge traversal: " + parentEdge.getId() + "(velocity: " + velocity + ")");
-			
+		
 			// publish map event only if there are listeners
 			if(Application.mapListeners.hasListeners()) {
 				try {
@@ -68,12 +69,6 @@ public class TrafficEdgeTraversal {
 		return parentEdge.getTlLength();
 	}
 	
-	public TrafficEdgePair pair(TrafficEdgeTraversal tet2) {
-		
-		return new TrafficEdgePair(this, tet2);
-		
-	}
-	
 	public String mapEvent() throws JsonGenerationException, IOException {
 	
 		
@@ -84,6 +79,7 @@ public class TrafficEdgeTraversal {
 		med.geom = parentEdge.getGeometry();
 
 		ObjectMapper mapper = new ObjectMapper();
-		return mapper.writeValueAsString(med);
+		String str = mapper.writeValueAsString(med);
+		return str;
 	}
 }

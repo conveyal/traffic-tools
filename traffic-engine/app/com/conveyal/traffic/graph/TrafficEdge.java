@@ -6,6 +6,7 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -36,7 +37,7 @@ public class TrafficEdge implements Serializable {
 	private Double pairedLength = 0.0;
 	
 	private List<PlainStreetEdge> downstreamEdges = new ArrayList<PlainStreetEdge>();
-	private List<Integer> downstreamEdgeIds = new ArrayList<Integer>();
+	private HashSet<Integer> downstreamEdgeIds = new HashSet<Integer>();
 	
 	private TripLine tripLine1 = null;
 	private TripLine tripLine2 = null;
@@ -91,7 +92,7 @@ public class TrafficEdge implements Serializable {
 		return downstreamEdges;
 	}
 	
-	public List<Integer> getDownstreamEdgeIds() {
+	public HashSet<Integer> getDownstreamEdgeIds() {
 		return downstreamEdgeIds;
 	}
 	

@@ -72,7 +72,7 @@ public class TrafficGraph {
 
 	private final static RoutingRequest defaultOptions = new RoutingRequest(new TraverseModeSet(TraverseMode.CAR));
 	
-	public static double TRIPLINE_LENGTH = 20;
+	public static double TRIPLINE_LENGTH = 30;
 	public static double TRIPLINE_OFFSET = 5; 
 	
 	public Long nextVehicleId = 100l; 
