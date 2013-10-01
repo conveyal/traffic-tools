@@ -112,6 +112,7 @@ public class VehicleState {
 									
 									// clear t1 crossings and start fresh
 									t1Crossings.clear();
+									vistedTc1s.clear();
 									
 									if(simulate) {
 										sTraversed.add(tet.getParentEdge().getId());
@@ -133,7 +134,7 @@ public class VehicleState {
 						// check t2 crossings for those matching end of current path
 						for(TripLineCrossing t1crossing : t1cs) {
 					
-							if(!vistedTc1s.contains(t1crossing.getEdgeId())) {
+							if(!vistedTc1s.contains(t1crossing.getEdgeId()) && !currentPath.edgeTraversed(t1crossing.getEdgeId())) {
 								pathChanged = true;
 								
 								vistedTc1s.add(t1crossing.getEdgeId());
