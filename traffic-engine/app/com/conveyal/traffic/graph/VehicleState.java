@@ -97,8 +97,6 @@ public class VehicleState {
 							//  find t2c crossing matching t1 crossings
 							if(t1Crossings.containsKey(t2crossing.getEdgeId())) {
 							
-								Logger.info("matching TL2 crossing for: " + t2crossing.getEdgeId());
-								
 								TripLineCrossing t1crossing = t1Crossings.get(t2crossing.getEdgeId());
 								
 								try {
@@ -136,7 +134,6 @@ public class VehicleState {
 							if(!t1Crossings.containsKey(t1crossing.getEdgeId()) && !currentPath.edgeTraversed(t1crossing.getEdgeId())) {
 								pathChanged = true;
 								t1Crossings.put(t1crossing.getEdgeId(), t1crossing);
-								Logger.info("TL1 crossing for: " + t1crossing.getEdgeId());
 							}
 							
 						}
@@ -147,9 +144,6 @@ public class VehicleState {
 				if(currentPath.length() > 1) {
 					
 					// if path is a pair (or longer) save and clear
-
-					Logger.info("Saving path for "  + currentPath.length() + " edges.");
-					
 					if(simulate) {
 						
 						for(TrafficEdgeTraversal tet : currentPath.getTraversalList()) {
@@ -168,7 +162,7 @@ public class VehicleState {
 				}
 				else if(currentPath.length() == 1 && t1Crossings.size() > 10) {
 					// if we're collecting lots of t1Crossings that don't match current path reset path...
-					Logger.info("Too many tl1s, clearing path");
+					
 					currentPath.clear();
 				}
 				
