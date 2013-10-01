@@ -701,11 +701,8 @@ public class Api extends Controller {
  	    for(Integer edgeId : edges)
  	    {  		
  	    	TrafficEdge edge = Api.graph.getTrafficEdge(edgeId);
- 	    	Geometry geom = edge.getGeometry();
  	    	
- 	    	org.opentripplanner.util.model.EncodedPolylineBean polylineBean =  PolylineEncoder.createEncodings(geom);
- 	    	
- 	    	path.addEdge(edgeId, edge.geLength(), polylineBean.getPoints());
+ 	    	path.addEdge(edgeId, edge.geLength(), edge.getEncodedGeometry());
  	    	
  	    	path.distance += edge.geLength();
  	    }

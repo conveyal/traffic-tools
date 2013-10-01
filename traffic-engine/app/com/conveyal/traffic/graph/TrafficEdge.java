@@ -16,10 +16,15 @@ import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.edgetype.PlainStreetEdge;
 import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Graph;
+import org.opentripplanner.util.PolylineEncoder;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LineString;
+import com.vividsolutions.jts.geom.PrecisionModel;
+import com.vividsolutions.jts.operation.buffer.BufferParameters;
+import com.vividsolutions.jts.operation.buffer.OffsetCurveBuilder;
 
 import play.Logger;
 import util.GeoUtils;
@@ -27,10 +32,14 @@ import util.ProjectedCoordinate;
 
 public class TrafficEdge implements Serializable {
 	
+	static OffsetCurveBuilder ocb = new OffsetCurveBuilder(new PrecisionModel(), new BufferParameters());
+	static GeometryFactory geometryFactory = new GeometryFactory();
+	
 	static final long serialVersionUID = 2;
 	
 	private final Integer id;
 	private final PlainStreetEdge edge;
+	private final String encodedGeom;
 	
 	private Double length = 0.0;
 	private Double tripLineLength = 0.0;
@@ -47,6 +56,11 @@ public class TrafficEdge implements Serializable {
 	public TrafficEdge(PlainStreetEdge originalPse, Graph graph, RoutingRequest options) {
 		this.id = graph.getIdForEdge(originalPse);
 		this.edge = originalPse;
+	
+		Coordinate[] offsetCoords = ocb.getOffsetCurve(originalPse.getGeometry().getCoordinates(), -0.00005);
+		Geometry geom = geometryFactory.createLineString(offsetCoords);
+		org.opentripplanner.util.model.EncodedPolylineBean polylineBean =  PolylineEncoder.createEncodings(geom);
+		this.encodedGeom = polylineBean.getPoints();
 		
 		for(Edge downstreamEdge : originalPse.getToVertex().getOutgoingStreetEdges()) {
 			if(downstreamEdge instanceof PlainStreetEdge && ((PlainStreetEdge)downstreamEdge).canTraverse(options)) {
