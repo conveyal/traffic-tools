@@ -187,7 +187,7 @@ var TaxiMapView = Backbone.View.extend({
 
       // Init the map
       this.map = L.map($('#map').get(0), {
-        center: [10.31741, 123.894], //TODO: add to the config file for now
+        center: defaultLatLon,
         zoom: 15,
         maxZoom: 17
       });

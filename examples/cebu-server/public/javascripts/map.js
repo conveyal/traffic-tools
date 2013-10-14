@@ -72,7 +72,7 @@ var CebuTraffic = CebuTraffic || {};
       agencyId: agencyId,
       map: {
         options: {
-          center: [39.952467541125955, -75.16360759735107],
+          center: defaultLatLon,
           zoom: 12
         }
       }

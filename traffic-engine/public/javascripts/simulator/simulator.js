@@ -42,7 +42,7 @@ function clearSimulation() {
 
 $(document).ready(function() {
 	
-  map = new L.map('map').setView([10.2977,123.8973], 14);
+  map = new L.map('map').setView(defaultLatLon, 14);
 
   L.tileLayer(mbUrl, mbOptions).addTo(map);
 
