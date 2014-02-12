@@ -10,7 +10,6 @@ import java.util.Map;
 
 import org.opengis.referencing.operation.TransformException;
 
-import com.conveyal.traffic.graph.utils.ProjectedCoordinate;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Maps;
 import com.vividsolutions.jts.geom.Coordinate;

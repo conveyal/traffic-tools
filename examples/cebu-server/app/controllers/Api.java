@@ -56,7 +56,9 @@ import api.TrafficStatsResponse;
 
 import com.conveyal.traffic.graph.TrafficEdge;
 import com.conveyal.traffic.graph.TrafficGraph;
-import com.conveyal.traffic.graph.utils.GeoUtils;
+import utils.GeoUtils;
+
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.vividsolutions.jts.geom.Coordinate;
@@ -70,9 +72,6 @@ public class Api extends Controller {
 	static public Integer CURRENT_APP_VERSION = 1;
 	
 	public static DistanceCache distanceCache = new DistanceCache();
-	
-	static StreetVelocityCache edgeVelocities = new StreetVelocityCache();
-	
 	
 	public static TrafficGraph graph = new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath"));
 		

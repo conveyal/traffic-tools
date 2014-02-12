@@ -35,10 +35,9 @@ import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.NoninvertibleTransformException;
 import org.opengis.referencing.operation.TransformException;
 
- import java.util.List;
+import java.util.List;
 
-import com.conveyal.traffic.graph.utils.ProjectedCoordinate;
- import com.google.common.base.Preconditions;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.CoordinateFilter;

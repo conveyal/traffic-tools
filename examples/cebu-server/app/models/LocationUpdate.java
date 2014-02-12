@@ -22,8 +22,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.hibernate.annotations.Type;
 
-import com.conveyal.traffic.graph.utils.GeoUtils;
-import com.conveyal.traffic.graph.utils.ProjectedCoordinate;
+import utils.GeoUtils;
+import utils.ProjectedCoordinate;
 import com.conveyal.trafficprobe.TrafficProbeProtos.LocationUpdate.Location;
 import com.google.gson.annotations.Expose;
 import com.vividsolutions.jts.geom.Coordinate;
