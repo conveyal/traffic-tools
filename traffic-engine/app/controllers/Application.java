@@ -16,6 +16,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import jobs.QueueSubscriberJob;
@@ -24,6 +26,9 @@ import models.*;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 import org.opentripplanner.routing.impl.GraphServiceImpl;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Graph.LoadLevel;
@@ -53,9 +58,10 @@ public class Application extends Controller {
 	public static void loadCsv(File csvFile) throws IOException {
 		
 		// reads a csv file in and pushes to redis
-		// format:  device_id,seconds/millisecons,lat,lon
+		// old format:  device_id,seconds/milliseconds,lat,lon
+		// new format iso8601 datetime,device_id,lon,lat
 
-		BufferedReader br = new BufferedReader(new FileReader(csvFile));
+		BufferedReader br = new BufferedReader(new FileReader(new File("/Users/kpw/Desktop/gps_trace_data/cebu-1m-sorted.csv")));
 		String line;
 
 		HashMap<String, Long> timeCorrection = new HashMap<String, Long>();
@@ -68,12 +74,22 @@ public class Application extends Controller {
 		
 		BinaryJedis jedis = jedisPool.pool.getResource();
 		
+		DateTimeFormatter isoFormatter = ISODateTimeFormat.dateTime();
+		
+		long lineCount = 0;
+		
 		try {
 			while ((line = br.readLine()) != null) {
 				try {
 					String[] lineParts = line.split(",");
 		
-				    String imei = lineParts[0].trim();
+				    String imei = lineParts[1].trim();
+				    
+				    Long ms = null;
+		    		
+					DateTime result1 = isoFormatter.parseDateTime(lineParts[0].trim().replace(" ", "T"));
+			    	ms = result1.getMillis();
+			    	
 				    
 				    if(locationUpdateBuilder == null) {
 				    	locationUpdateBuilder = TrafficProbeProtos.LocationUpdate.newBuilder();
@@ -82,47 +98,23 @@ public class Application extends Controller {
 				    	
 				    	// flush updates 
 				    	
+				    	lastTime.remove(imei);
+				    	
 				    	jedis.rpush("queue".getBytes(), locationUpdateBuilder.build().toByteArray());
 				    	
 				    	locationUpdateBuilder = TrafficProbeProtos.LocationUpdate.newBuilder();
 				    	
 				    	updateSize = 0;
 				    }
-				    
+		
 			    	if(!lastTime.containsKey(imei)) {
-				    	lastTime.put(imei, 0l);
-				    	timeCorrection.put(imei, 0l);
-				    }
-			    	Long ms = null;
-			    		
-				    try {
-				    	ms = Long.parseLong(lineParts[1].trim());
-				    } 
-				    catch(NumberFormatException ne) {
-				    	Double secondsDouble = Double.parseDouble(lineParts[1].trim());
-				    	ms = secondsDouble.longValue() * 1000;
-				    }
-				    
-				    // convert to milliseconds if in seconds
-				    if(ms < 10000000000l)
-				    	ms = ms * 1000;
-				    
-				    // correct times on sequence values missing increment without location updates
-				    if(lastTime.get(imei).equals(ms)) {
-				    	Long tc = timeCorrection.get(imei);
-				    	tc += 5000;
-				    	ms += tc;
-				    	timeCorrection.put(imei, tc);
-				    }
-				    else {
-				    	timeCorrection.put(imei, 0l);
 				    	lastTime.put(imei, ms);
 				    }
-				    
+			    	
 				    Long lt = lastTime.get(imei);
 				    
-				    Double lat = Double.parseDouble(lineParts[2].trim());
-					Double lon = Double.parseDouble(lineParts[3].trim());
+				    Double lat = Double.parseDouble(lineParts[3].trim());
+					Double lon = Double.parseDouble(lineParts[2].trim());
 					
 					TrafficProbeProtos.LocationUpdate.Location.Builder locationBuilder = TrafficProbeProtos.LocationUpdate.Location.newBuilder();
 					    
@@ -139,14 +131,19 @@ public class Application extends Controller {
 					Long vehicleId = Application.graph.getVehicleId(imei);
 					
 					locationUpdateBuilder.setPhone(vehicleId);
-					locationUpdateBuilder.setTime(ms);
+					locationUpdateBuilder.setTime(lt);
 					
 					Date time = new Date(ms);
 					
-					Logger.info(imei + "," + time  + "," + lat  + "," + lon);
+					//Logger.info(imei + "," + time  + "," + lat  + "," + lon);
 								
 					lastImei = imei;
 				    updateSize++;
+				    lineCount++;
+				    
+				    if(lineCount % 10000 == 0)
+				    	Logger.info("processed  " + lineCount + " at " + time);
+			
 				}
 				catch(Exception e) {
 					Logger.warn("Couldn't parse CSV line: " + line);

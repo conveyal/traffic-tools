@@ -93,7 +93,7 @@ public class TrafficGraph {
 	
 	private ConcurrentHashMap<Long, VehicleState> vehicles = new ConcurrentHashMap<Long, VehicleState>(8, 0.9f, 1);
 	private ConcurrentHashMap<String, Long> vehicleIds = new ConcurrentHashMap<String, Long>(8, 0.9f, 1);
-	private ConcurrentHashMap<Long, Long> vehicleUpdateLock = new ConcurrentHashMap<Long, Long>(8, 0.9f, 1);
+	private ConcurrentHashMap<String, String> vehicleUpdateLock = new ConcurrentHashMap<String, String>(8, 0.9f, 1);
 	
 	public RoutingRequest getOptions() {
 		return defaultOptions;
@@ -235,6 +235,10 @@ public class TrafficGraph {
 		return trafficEdgeMap.get(id);
 	}
 	
+	public HashMap<Integer, TrafficEdge> getTrafficEdgeMap() {
+		return trafficEdgeMap;
+	}
+	
 	public void updatePaths(LinkedList<TrafficEdgeTraversal> path) {
 		
 		psIndex.update(path);
@@ -248,12 +252,16 @@ public class TrafficGraph {
 		return vehicleIds.get(imei);
 	}
 	
-	public Long getVehicleUpdateLock(Long vehicleId) {
+	public String getVehicleUpdateLock(Long vehicleId) {
 		
-		if(!vehicleUpdateLock.contains(vehicleId))
-			vehicleUpdateLock.put(vehicleId, new Long(0l));
-		
-		return vehicleUpdateLock.get(vehicleId);
+		if(!vehicleUpdateLock.contains(vehicleId.toString())) {
+			synchronized(vehicleUpdateLock) {
+				if(!vehicleUpdateLock.contains(vehicleId.toString()))
+					vehicleUpdateLock.put(vehicleId.toString(), new String(vehicleId.toString()));
+			}
+		}
+	
+		return vehicleUpdateLock.get(vehicleId.toString());
 	}
 	
 	public Integer getVehicleCount() {

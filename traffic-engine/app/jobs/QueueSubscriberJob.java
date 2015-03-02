@@ -24,7 +24,7 @@ public class QueueSubscriberJob extends Job {
 	
     public void doJob() {
     	
-    	ExecutorService executor = Executors.newFixedThreadPool(3);
+    	ExecutorService executor = Executors.newFixedThreadPool(1);
 
     	Date lastStatsUpdate = new Date();
     	Long lastTotalLocationUpdates = 0l;
