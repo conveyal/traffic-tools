@@ -37,17 +37,17 @@ import jobs.ObservationHandler;
 import models.*;
 import api.*;
 
-@With(Secure.class)
+//@With(Secure.class)
 public class Taxi extends Controller {
 	
-	@Before
-    static void setConnectedUser() {
-        if(Security.isConnected() && Security.check("taxi")) {
-            renderArgs.put("user", Security.connected());
-        }
-        else
-        	Application.index();
-    }
+//	@Before
+//    static void setConnectedUser() {
+//        if(Security.isConnected() && Security.check("taxi")) {
+//            renderArgs.put("user", Security.connected());
+//        }
+//        else
+//        	Application.index();
+//    }
 	
 	public static void activeTaxis() {
 		

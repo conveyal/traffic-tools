@@ -38,17 +38,16 @@ import jobs.ObservationHandler;
 
 import models.*;
 
-@With(Secure.class)
 public class Admin extends Controller {
 	
-	@Before
+	/*@Before
     static void setConnectedUser() {
         if(Security.isConnected() && Security.check("admin")) {
             renderArgs.put("user", Security.connected());
         }
         else
         	Application.index();
-    }
+    }*/
 	
 	
 	public static void accounts() {

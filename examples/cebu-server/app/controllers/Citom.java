@@ -48,7 +48,7 @@ import jobs.ObservationHandler;
 import models.*;
 import api.*;
 
-@With(Secure.class)
+//@With(Secure.class)
 public class Citom extends Controller {
 
 	private static ObjectMapper mapper = new ObjectMapper(); //.configure(SerializationConfig.Feature.WRITE_DATES_AS_TIMESTAMPS, false);
@@ -68,14 +68,14 @@ public class Citom extends Controller {
         return sw.toString();
     }
 	
-	@Before
-    static void setConnectedUser() {
-        if(Security.isConnected() && Security.check("citom")) {
-            renderArgs.put("user", Security.connected());
-        }
-        else
-        	Application.index();
-    }
+//	@Before
+//    static void setConnectedUser() {
+//        if(Security.isConnected() && Security.check("citom")) {
+//            renderArgs.put("user", Security.connected());
+//        }
+//        else
+//        	Application.index();
+//    }
 	
 	public static void index() {
 		render();
