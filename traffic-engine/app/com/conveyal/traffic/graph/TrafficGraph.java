@@ -65,8 +65,8 @@ import org.springframework.context.support.GenericApplicationContext;
 
 import play.Logger;
 import play.Play;
-import util.GeoUtils;
-import util.ProjectedCoordinate;
+import utils.GeoUtils;
+import utils.ProjectedCoordinate;
 
 public class TrafficGraph {
 
@@ -81,6 +81,8 @@ public class TrafficGraph {
 	
 	private File trafficGraphFile;
 	
+	private final String graphName;
+	
 	private Graph graph;
 	private StreetVertexIndexServiceImpl indexService;
 	
@@ -93,38 +95,46 @@ public class TrafficGraph {
 	
 	private ConcurrentHashMap<Long, VehicleState> vehicles = new ConcurrentHashMap<Long, VehicleState>(8, 0.9f, 1);
 	private ConcurrentHashMap<String, Long> vehicleIds = new ConcurrentHashMap<String, Long>(8, 0.9f, 1);
-	private ConcurrentHashMap<String, String> vehicleUpdateLock = new ConcurrentHashMap<String, String>(8, 0.9f, 1);
+	private ConcurrentHashMap<Long, String> vehicleUpdateLock = new ConcurrentHashMap<Long, String>(8, 0.9f, 1);
+	
+	public TrafficGraph(String path, String graphName) {
+		
+		this.graphName = graphName;
+		
+		if(path != null)
+			this.load(path);
+	
+	}
 	
 	public RoutingRequest getOptions() {
 		return defaultOptions;
 	}
 	
-	public static TrafficGraph load(String path) {
+	public void load(String path) {
 		
 		try {
-			TrafficGraph g = new TrafficGraph();
 			
 			Logger.info("Loading graph: " + path);
 			
 			File otpGraphFile = new File(path, "Graph.obj");
 			
-			g.graph = Graph.load(otpGraphFile, LoadLevel.DEBUG);
-			g.indexService = new StreetVertexIndexServiceImpl(g.graph);
+			this.graph = Graph.load(otpGraphFile, LoadLevel.DEBUG);
+			this.indexService = new StreetVertexIndexServiceImpl(this.graph);
 			
-			g.trafficGraphFile = new File(path, "Traffic.obj");
+			this.trafficGraphFile = new File(path, "Traffic.obj");
 			
-			if(g.trafficGraphFile.exists()) {
+			if(this.trafficGraphFile.exists()) {
 				Logger.info("Loading TrafficGraph: " + path);
 
 				
 				try {
-					InputStream file = new FileInputStream(g.trafficGraphFile);
+					InputStream file = new FileInputStream(this.trafficGraphFile);
 					InputStream buffer = new BufferedInputStream( file );
 					ObjectInput input = new ObjectInputStream ( buffer );
 					try {
-						g.trafficEdgeMap = (HashMap<Integer, TrafficEdge>)input.readObject();
-						g.psIndex = (PathStatisticsIndex)input.readObject();
-						Logger.info(g.trafficEdgeMap.size() + " TrafficEdges...");
+						this.trafficEdgeMap = (HashMap<Integer, TrafficEdge>)input.readObject();
+						this.psIndex = (PathStatisticsIndex)input.readObject();
+						Logger.info(this.trafficEdgeMap.size() + " TrafficEdges...");
 						
 					}
 					finally {
@@ -134,27 +144,23 @@ public class TrafficGraph {
 				catch(Exception e) {
 					Logger.info("Failed to load TrafficGraph: " + e.toString());
 					e.printStackTrace();
-					g.trafficEdgeMap = null;
+					this.trafficEdgeMap = null;
 				}
 				
 			}
 			
-			if(g.trafficEdgeMap == null) {
+			if(this.trafficEdgeMap == null) {
 				
-				build(g);
+				build(this);
 				
-				save(g);
+				save(this);
 			}
 			
-			g.indexTrafficEdges();
-			
-			return g;
-			
+			this.indexTrafficEdges();
+		
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			 
-			return null;
 		}
 	}
 	
@@ -174,7 +180,7 @@ public class TrafficGraph {
 				if(e instanceof PlainStreetEdge && !((PlainStreetEdge)e).canTraverse(defaultOptions))
 					continue;
 				
-				TrafficEdge te = new TrafficEdge((PlainStreetEdge)e, g.graph, defaultOptions);
+				TrafficEdge te = new TrafficEdge(g.graphName, (PlainStreetEdge)e, g.graph, defaultOptions);
 				
 				final Geometry geometry = te.getGeometry();
 				if (geometry != null) {
@@ -222,11 +228,6 @@ public class TrafficGraph {
 		}
 	}
 	
-	public TrafficGraph()
-	{
-
-	}
-	
 	public TrafficEdgeIndex getTraffEdgeIndex() {
 		return teIndex;
 	}
@@ -254,14 +255,10 @@ public class TrafficGraph {
 	
 	public String getVehicleUpdateLock(Long vehicleId) {
 		
-		if(!vehicleUpdateLock.contains(vehicleId.toString())) {
-			synchronized(vehicleUpdateLock) {
-				if(!vehicleUpdateLock.contains(vehicleId.toString()))
-					vehicleUpdateLock.put(vehicleId.toString(), new String(vehicleId.toString()));
-			}
-		}
-	
-		return vehicleUpdateLock.get(vehicleId.toString());
+		if(!vehicleUpdateLock.contains(vehicleId))
+			vehicleUpdateLock.put(vehicleId, new String(vehicleId.toString()));
+		
+		return vehicleUpdateLock.get(vehicleId);
 	}
 	
 	public Integer getVehicleCount() {

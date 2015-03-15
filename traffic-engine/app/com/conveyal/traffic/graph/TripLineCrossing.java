@@ -8,8 +8,8 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import controllers.Application;
-import util.GeoUtils;
-import util.MapEventData;
+import utils.GeoUtils;
+import utils.MapEventData;
 
 public class TripLineCrossing implements Comparable<TripLineCrossing> {
 	

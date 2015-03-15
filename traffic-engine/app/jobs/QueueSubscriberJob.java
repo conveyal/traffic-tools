@@ -15,7 +15,7 @@ import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
-import util.GeoUtils;
+import utils.GeoUtils;
 
 @OnApplicationStart(async=true)
 public class QueueSubscriberJob extends Job {

@@ -5,10 +5,10 @@ import play.mvc.*;
 import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import util.GeoUtils;
-import util.MapEventData;
-import util.MapListener;
-import util.ProjectedCoordinate;
+import utils.GeoUtils;
+import utils.MapEventData;
+import utils.MapListener;
+import utils.ProjectedCoordinate;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -49,7 +49,10 @@ import com.conveyal.trafficprobe.TrafficProbeProtos;
 
 public class Application extends Controller {
 	
-	public static TrafficGraph graph = TrafficGraph.load(Play.configuration.getProperty("application.otpGraphPath"));
+	//public static TrafficGraph graph = new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath") + "cebu/", "cebu");
+	//public static TrafficGraph graph = new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath") + "manila/", "manila");
+	public static TrafficGraph graph = new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath") + "jakarta/", "jakarta");
+
 	
 	public static MapListener mapListeners = new MapListener();
 	
@@ -61,7 +64,7 @@ public class Application extends Controller {
 		// old format:  device_id,seconds/milliseconds,lat,lon
 		// new format iso8601 datetime,device_id,lon,lat
 
-		BufferedReader br = new BufferedReader(new FileReader(new File("/Users/kpw/Desktop/gps_trace_data/cebu-1m-sorted.csv")));
+		BufferedReader br = new BufferedReader(new FileReader(new File("/Users/kpw/Desktop/gps_trace_data/jakarta-1m-sorted.csv")));
 		String line;
 
 		HashMap<String, Long> timeCorrection = new HashMap<String, Long>();
@@ -218,11 +221,11 @@ public class Application extends Controller {
 		if(toDate != null) 
 			to = new Date(toDate);
 			
-		TrafficStats stats = new TrafficStats(from, to, days, minHour, maxHour, filteredEdges);
+		//TrafficStats stats = new TrafficStats(from, to, days, minHour, maxHour, filteredEdges);
 		
-		TrafficStatsResponse response = stats.getEdgeSpeeds(null);
+		//TrafficStatsResponse response = stats.getEdgeSpeeds(null);
 	
-		renderJSON(response);
+		//renderJSON(response);
 	}
 	
 	public static void data() {
@@ -272,7 +275,7 @@ public class Application extends Controller {
 	
     public static void simulate() {
     	
-    	Coordinate coord1 = graph.getRandomPoint();
+    	/*Coordinate coord1 = graph.getRandomPoint();
     	Coordinate coord2 = graph.getRandomPoint();
    
     	List<Integer> edges = graph.getEdgesBetweenPoints(coord1, coord2);
@@ -294,7 +297,7 @@ public class Application extends Controller {
 		}
     	
     	VehicleState vs = new VehicleState((long)1, graph);
-    	vs.simulateUpdatePosition(edges, 15.0);
+    	vs.simulateUpdatePosition(edges, 15.0);*/
     	
         ok();
     }

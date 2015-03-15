@@ -1,4 +1,4 @@
-package util;
+package utils;
 
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 

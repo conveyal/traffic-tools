@@ -6,8 +6,8 @@ import models.PathPoint;
 
 import gov.sandia.cognition.math.matrix.Vector;
 import gov.sandia.cognition.math.matrix.VectorFactory;
-import util.GeoUtils;
-import util.ProjectedCoordinate;
+import utils.GeoUtils;
+import utils.ProjectedCoordinate;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.LineString;

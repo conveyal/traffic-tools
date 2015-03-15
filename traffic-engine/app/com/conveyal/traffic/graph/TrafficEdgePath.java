@@ -73,7 +73,7 @@ public class TrafficEdgePath {
 			Logger.warn("Average Speed exceeds 50 m/s: "  + pathVelocity);
 		else {
 			for(TrafficEdgeTraversal tet : traversalList) { 
-				TrafficStats.updateEdgeStats(tet.getParentEdge().getId(), new Date(tet.getTlc2().getTimeAtCrossing()), pathVelocity);
+				TrafficStats.updateEdgeStats(tet.getParentEdge().graphName, tet.getParentEdge().getId(), new Date(tet.getTlc2().getTimeAtCrossing()), pathVelocity);
 			}
 		}
 		

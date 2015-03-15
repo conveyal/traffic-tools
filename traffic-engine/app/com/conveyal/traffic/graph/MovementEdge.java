@@ -1,6 +1,6 @@
 package com.conveyal.traffic.graph;
 
-import util.GeoUtils;
+import utils.GeoUtils;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.LineString;

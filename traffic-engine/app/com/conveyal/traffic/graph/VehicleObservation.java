@@ -13,9 +13,9 @@ import com.google.gson.GsonBuilder;
 
 import controllers.Application;
 
-import util.GeoUtils;
-import util.MapEventData;
-import util.ProjectedCoordinate;
+import utils.GeoUtils;
+import utils.MapEventData;
+import utils.ProjectedCoordinate;
 
 public class VehicleObservation {
 

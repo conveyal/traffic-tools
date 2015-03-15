@@ -13,7 +13,7 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package util;
+package utils;
 
 import java.io.IOException;
 

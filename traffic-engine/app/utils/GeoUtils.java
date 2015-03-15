@@ -1,4 +1,4 @@
-package util;
+package utils;
 
 import gov.sandia.cognition.math.matrix.Vector;
 import gov.sandia.cognition.math.matrix.VectorFactory;

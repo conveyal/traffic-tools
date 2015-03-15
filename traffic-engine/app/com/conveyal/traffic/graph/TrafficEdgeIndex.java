@@ -3,7 +3,7 @@ package com.conveyal.traffic.graph;
 import java.util.ArrayList;
 import java.util.List;
 
-import util.GeoUtils;
+import utils.GeoUtils;
 
 import models.PathPoint;
 

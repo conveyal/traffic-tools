@@ -22,8 +22,8 @@ import com.vividsolutions.jts.geom.LineString;
 
 import controllers.Application;
 
-import util.GeoUtils;
-import util.ProjectedCoordinate;
+import utils.GeoUtils;
+import utils.ProjectedCoordinate;
 
 public class VehicleState {
 

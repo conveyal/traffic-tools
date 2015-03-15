@@ -27,8 +27,8 @@ import com.vividsolutions.jts.operation.buffer.BufferParameters;
 import com.vividsolutions.jts.operation.buffer.OffsetCurveBuilder;
 
 import play.Logger;
-import util.GeoUtils;
-import util.ProjectedCoordinate;
+import utils.GeoUtils;
+import utils.ProjectedCoordinate;
 
 public class TrafficEdge implements Serializable {
 	
@@ -37,6 +37,7 @@ public class TrafficEdge implements Serializable {
 	
 	static final long serialVersionUID = 2;
 	
+	public final String graphName;
 	private final Integer id;
 	private final PlainStreetEdge edge;
 	private final String encodedGeom;
@@ -53,7 +54,10 @@ public class TrafficEdge implements Serializable {
 	
 	private Boolean hasTripLines = false;
 	
-	public TrafficEdge(PlainStreetEdge originalPse, Graph graph, RoutingRequest options) {
+	public TrafficEdge(String graphName, PlainStreetEdge originalPse, Graph graph, RoutingRequest options) {
+		
+		this.graphName = graphName;
+		
 		this.id = graph.getIdForEdge(originalPse);
 		this.edge = originalPse;
 	
@@ -80,6 +84,10 @@ public class TrafficEdge implements Serializable {
 	
 	public LineString getGeometry() {
 		return this.edge.getGeometry();
+	}
+	
+	public String getEncodedGeometry() {
+		return this.encodedGeom;
 	}
 	
 	public TripLine getTl1() {

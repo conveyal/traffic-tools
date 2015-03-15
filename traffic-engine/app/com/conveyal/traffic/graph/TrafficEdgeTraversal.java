@@ -9,7 +9,7 @@ import controllers.Application;
 
 import models.MapEvent;
 import play.Logger;
-import util.MapEventData;
+import utils.MapEventData;
 
 public class TrafficEdgeTraversal {
 	

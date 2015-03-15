@@ -5,7 +5,7 @@ import java.util.Date;
 import play.Logger;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import util.GeoUtils;
+import utils.GeoUtils;
 
 import com.conveyal.traffic.graph.StatsPool;
 import com.conveyal.traffic.graph.VehicleObservation;
