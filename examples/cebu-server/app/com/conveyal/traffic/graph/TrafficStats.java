@@ -29,7 +29,7 @@ public class TrafficStats {
 		edgeIds = null;
 	}
 	
-	public TrafficStats(Date fromDate, Date toDate, HashSet<Integer> daysOfWeek, Integer fromHour, Integer toHour, HashSet<Long> edgeIds) {
+	public TrafficStats(String graphName, Date fromDate, Date toDate, HashSet<Integer> daysOfWeek, Integer fromHour, Integer toHour, HashSet<Long> edgeIds) {
 				
 		this.edgeIds = edgeIds;
 		
@@ -60,7 +60,7 @@ public class TrafficStats {
 		    		continue;
 		    	
 		    	// query for specific hour
-		    	TrafficStats hourData = new TrafficStats(cal.getTime(), edgeIds);
+		    	TrafficStats hourData = new TrafficStats(graphName, cal.getTime(), edgeIds);
 		    	
 		    	// add the hour of data to current stats summary
 		    	this.add(hourData);
@@ -76,7 +76,7 @@ public class TrafficStats {
 				for(Integer hour = fromHour; hour <= toHour; hour++) {
 					
 					// query for specific hour and day of week
-			    	TrafficStats dayHourData = new TrafficStats(day, hour, edgeIds);
+			    	TrafficStats dayHourData = new TrafficStats(graphName, day, hour, edgeIds);
 			    	
 			    	// add the hour of data to current stats summary
 			    	this.add(dayHourData);
@@ -88,29 +88,29 @@ public class TrafficStats {
 			for(Integer hour = fromHour; hour <= toHour; hour++) {
 				
 				// query for specific hour and day of week
-		    	TrafficStats dayHourData = new TrafficStats(hour, edgeIds);
+		    	TrafficStats dayHourData = new TrafficStats(graphName, hour, edgeIds);
 		    	
 		    	// add the hour of data to current stats summary
 		    	this.add(dayHourData);
 			}
 		}
 		else {
-			this.add(new TrafficStats(edgeIds));
+			this.add(new TrafficStats(graphName, edgeIds));
 		}
 		
 	}
 	
-	public TrafficStats(HashSet<Long> edgeIds) {
+	public TrafficStats(String graphName, HashSet<Long> edgeIds) {
 		
 		this.edgeIds = edgeIds;
 		
-		String statsKeyBase = "all";
+		String statsKeyBase = graphName + "_all";
 		
 		fetchData(statsKeyBase);
 		
 	}
 	
-	public TrafficStats(Date d, HashSet<Long> edgeIds) {
+	public TrafficStats(String graphName, Date d, HashSet<Long> edgeIds) {
 		
 		this.edgeIds = edgeIds;
 		
@@ -124,29 +124,29 @@ public class TrafficStats {
         int day = calendar.get(Calendar.DAY_OF_MONTH);
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
 		
-		String statsKeyBase = "date_" + year + "_" + month + "_" + day + "_" + hour;
+		String statsKeyBase = graphName + "_date_" + year + "_" + month + "_" + day + "_" + hour;
 		
 		fetchData(statsKeyBase);
 	}
 	
-	public TrafficStats(Integer dayOfWeek, Integer hour, HashSet<Long> edgeIds) {
+	public TrafficStats(String graphName, Integer dayOfWeek, Integer hour, HashSet<Long> edgeIds) {
 		
 		this.edgeIds = edgeIds;
 		
 		// query for a specific year_month_day_hour 
 
-		String statsKeyBase = "day_" + dayOfWeek + "_" + hour;
+		String statsKeyBase = graphName + "_day_" + dayOfWeek + "_" + hour;
 		
 		fetchData(statsKeyBase);
 	}
 	
-	public TrafficStats(Integer hour, HashSet<Long> edgeIds) {
+	public TrafficStats(String graphName, Integer hour, HashSet<Long> edgeIds) {
 		
 		this.edgeIds = edgeIds;
 		
 		// query for a specific year_month_day_hour 
 
-		String statsKeyBase = "hour_" + hour;
+		String statsKeyBase = graphName + "_hour_" + hour;
 		
 		fetchData(statsKeyBase);
 	}
@@ -288,7 +288,7 @@ public class TrafficStats {
 		}
 	}
 	
-	public static Double getEdgeSpeed(Integer edgeId, Date d) {
+	public static Double getEdgeSpeed(String graphName, Integer edgeId, Date d) {
 		
 		Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(d.getTime());
@@ -300,7 +300,7 @@ public class TrafficStats {
 		
 		
 		
-		String statsKeyBase = year + "_" + month + "_" + day + "_" + hour;
+		String statsKeyBase = graphName + "_" + year + "_" + month + "_" + day + "_" + hour;
 		
 		String countKey = statsKeyBase + "_c";
 		String speedKey = statsKeyBase + "_s";
@@ -331,7 +331,7 @@ public class TrafficStats {
 	}
 	
 	
-	public static void updateEdgeStats(Integer edgeId, Date d, Double speed) {
+	public static void updateEdgeStats(String graphName, Integer edgeId, Date d, Double speed) {
 		
 		Jedis jedisStats = jedisPool.pool.getResource();
 		
@@ -340,7 +340,7 @@ public class TrafficStats {
 			// observation counts are stored in [key]_c while speed totals are stored in [key]_s 
 			// both are hashes of edge ids
 			
-			jedisStats.incr("totalObservations");
+			jedisStats.incr(graphName + "_totalObservations");
 			
 			Calendar calendar = Calendar.getInstance();
 	        calendar.setTimeInMillis(d.getTime());
@@ -353,7 +353,7 @@ public class TrafficStats {
 			
 			
 			// count observations by time bucket 
-			String statsKeyBase = "date_" + year;
+			String statsKeyBase = graphName + "_date_" + year;
 			jedisStats.hincrBy(statsKeyBase, month.toString(), 1);
 			
 			statsKeyBase += "_" + month;
@@ -378,14 +378,14 @@ public class TrafficStats {
 			
 			// store collapsed views of data too day_dow_hh_, hour_hh_ and all_  
 			
-			jedisStats.hincrBy("day_" + dayOfWeek + "_" + hour + "_s", edgeId.toString(), cmSpeed);
-			jedisStats.hincrBy("day_" + dayOfWeek + "_" + hour + "_c", edgeId.toString(), 1);
+			jedisStats.hincrBy(graphName + "_day_" + dayOfWeek + "_" + hour + "_s", edgeId.toString(), cmSpeed);
+			jedisStats.hincrBy(graphName + "_day_" + dayOfWeek + "_" + hour + "_c", edgeId.toString(), 1);
 			
-			jedisStats.hincrBy("hour_" + hour + "_s", edgeId.toString(), cmSpeed);
-			jedisStats.hincrBy("hour_" + hour + "_c", edgeId.toString(), 1);
+			jedisStats.hincrBy(graphName + "_hour_" + hour + "_s", edgeId.toString(), cmSpeed);
+			jedisStats.hincrBy(graphName + "_hour_" + hour + "_c", edgeId.toString(), 1);
 			
-			jedisStats.hincrBy("all_s", edgeId.toString(), cmSpeed);
-			jedisStats.hincrBy("all_c", edgeId.toString(), 1);
+			jedisStats.hincrBy(graphName + "_all_s", edgeId.toString(), cmSpeed);
+			jedisStats.hincrBy(graphName + "_all_c", edgeId.toString(), 1);
 			
 			
 		}
@@ -396,4 +396,6 @@ public class TrafficStats {
 			jedisPool.pool.returnResource(jedisStats);
 		}
 	}
+	
+	
 }

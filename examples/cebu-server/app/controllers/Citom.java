@@ -89,11 +89,20 @@ public class Citom extends Controller {
 		render();
 	}
 	
-	public static void journey() {
+	public static void journey(String city) {
 		
 		List<Journey> saveJourneys = Journey.findAll();
 		
-		render(saveJourneys);
+		String latLon = "";
+		
+		if(city.equals("cebu"))
+			latLon = "10.2833, 123.9000";
+		if(city.equals("manila"))
+			latLon = "14.5833, 121.0667";
+		if(city.equals("jakarta"))
+			latLon = "-6.1745, 106.8227";
+		
+		render(city, latLon, saveJourneys);
 	}
 	
 	public static void area() {
@@ -118,7 +127,7 @@ public class Citom extends Controller {
 		
 		journey.save();
 		
-		Citom.journey();
+		Citom.journey("");
 	}
 	
 	public static void clearJourney(Long id) {
@@ -127,7 +136,7 @@ public class Citom extends Controller {
 	
 		journey.delete();
 		
-		Citom.journey();
+		Citom.journey("");
 	}
 	
 	public static void alerts(String fromDate, String toDate, String type, String query, Boolean active, Boolean csv) {

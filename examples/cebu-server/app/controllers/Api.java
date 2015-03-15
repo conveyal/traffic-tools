@@ -8,7 +8,7 @@ import utils.DistanceCache;
 import utils.EncodedPolylineBean;
 import utils.Observation;
 import utils.StreetVelocityCache;
-import utils.TrafficStats;
+import com.conveyal.traffic.graph.TrafficStats;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
@@ -52,7 +52,7 @@ import api.AlertSimple;
 import api.AuthResponse;
 import api.MessageResponse;
 import api.Path;
-import api.TrafficStatsResponse;
+import com.conveyal.traffic.graph.TrafficStatsResponse;
 
 import com.conveyal.traffic.graph.TrafficEdge;
 import com.conveyal.traffic.graph.TrafficGraph;
@@ -73,10 +73,21 @@ public class Api extends Controller {
 	
 	public static DistanceCache distanceCache = new DistanceCache();
 	
-	public static TrafficGraph graph = new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath"));
+	public static TrafficGraph jakataGraph = null;//new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath") + "/jakarta", "jakarta");
+	public static TrafficGraph manilaGraph = null; //new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath") + "/manila", "manila");
+	public static TrafficGraph cebuGraph = new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath") + "/cebu", "cebu");
+	
+	public static TrafficGraph getGraph(String graphId) {
+		if(graphId.equals("jakarta"))
+			return jakataGraph;
+	
+		if(graphId.equals("manila"))
+			return manilaGraph;
 		
-	public static TrafficGraph getGraph() {
-		return graph;
+		if(graphId.equals("cebu"))
+			return cebuGraph;
+		
+		return cebuGraph;
 	}
 	
 	public static ObjectMapper jsonMapper = new ObjectMapper();
@@ -649,7 +660,7 @@ public class Api extends Controller {
     	renderJSON(gson.toJson(updates));
     }
    
-    public static void path(String lat1, String lon1, String lat2, String lon2)
+    public static void path(String graphId, String lat1, String lon1, String lat2, String lon2)
 		   throws JsonGenerationException, JsonMappingException, IOException {
 	    final Coordinate coord1 =
 	        new Coordinate(Double.parseDouble(lon1), Double.parseDouble(lat1));
@@ -658,13 +669,13 @@ public class Api extends Controller {
 	   
 	    Path path = new Path();
 	    
-	    List<Integer> edgeIds = Api.graph.getEdgesBetweenPoints(coord1, coord2);
+	    List<Integer> edgeIds = Api.getGraph(graphId).getEdgesBetweenPoints(coord1, coord2);
 	
 		path.distance = 0.0;
 		
 	    for(Integer edgeId : edgeIds)
 	    {  		
-	    	TrafficEdge edge = Api.graph.getTrafficEdge(edgeId);
+	    	TrafficEdge edge = Api.getGraph(graphId).getTrafficEdge(edgeId);
 	    	Geometry geom = edge.getGeometry();
 	    	
 	    	org.opentripplanner.util.model.EncodedPolylineBean polylineBean =  PolylineEncoder.createEncodings(geom);
@@ -677,7 +688,7 @@ public class Api extends Controller {
 	    renderJSON(path);
 	} 
     
-    public static void edges(String edgeIds) {
+    public static void edges(String graphId, String edgeIds) {
  	    
     	ArrayList<Integer> edges = new ArrayList<Integer>();
 		
@@ -699,7 +710,7 @@ public class Api extends Controller {
  		
  	    for(Integer edgeId : edges)
  	    {  		
- 	    	TrafficEdge edge = Api.graph.getTrafficEdge(edgeId);
+ 	    	TrafficEdge edge = Api.getGraph(graphId).getTrafficEdge(edgeId);
  	    	
  	    	path.addEdge(edgeId, edge.geLength(), edge.getEncodedGeometry());
  	    	
@@ -709,7 +720,7 @@ public class Api extends Controller {
  	    renderJSON(path);
  	} 
     
-    public static void trafficStats(String edgeIds, String daysOfWeek, Long fromDate, Long toDate, Integer minHour, Integer maxHour) {
+    public static void trafficStats(String graphId, String edgeIds, String daysOfWeek, Long fromDate, Long toDate, Integer minHour, Integer maxHour) {
 		
 		Http.Header hd = new Http.Header();
 		
@@ -753,14 +764,14 @@ public class Api extends Controller {
 		if(toDate != null)
 			to = new Date(toDate);
 			
-		TrafficStats stats = new TrafficStats(from, to, days, minHour, maxHour, filteredEdges);
+		TrafficStats stats = new TrafficStats(graphId, from, to, days, minHour, maxHour, filteredEdges);
 		
 		TrafficStatsResponse response = stats.getEdgeSpeeds(null);
 	
 		renderJSON(response);
 	}
     
-    public static void currentConditions(Integer hours) {
+    public static void currentConditions(String graphId, Integer hours) {
 		
 		Http.Header hd = new Http.Header();
 		
@@ -772,14 +783,14 @@ public class Api extends Controller {
 		
 		cal.setTime(new Date()); 
 	
-		TrafficStats stats = new TrafficStats(cal.getTime(), null);
+		TrafficStats stats = new TrafficStats(graphId, cal.getTime(), null);
 		
 		if(hours != null && hours > 1) {
 			while(hours > 1) {
 				
 				cal.add(Calendar.HOUR_OF_DAY, -1);
 				
-				TrafficStats s = new TrafficStats(cal.getTime(), null);
+				TrafficStats s = new TrafficStats(graphId, cal.getTime(), null);
 				
 				stats.add(s);
 				
@@ -792,7 +803,7 @@ public class Api extends Controller {
 		renderJSON(response);
 	}
     
-    public static void baselineConditions(Integer hours) {
+    public static void baselineConditions(String graphId, Integer hours) {
 		
 		Http.Header hd = new Http.Header();
 		
@@ -817,7 +828,7 @@ public class Api extends Controller {
 					
 					cal.add(Calendar.HOUR_OF_DAY, -1);
 					
-					TrafficStats s = new TrafficStats(cal.getTime(), null);
+					TrafficStats s = new TrafficStats(graphId, cal.getTime(), null);
 					
 					stats.add(s);
 					
@@ -825,7 +836,7 @@ public class Api extends Controller {
 				}
 			}
 			else {
-				TrafficStats s = new TrafficStats(cal.getTime(), null);
+				TrafficStats s = new TrafficStats(graphId, cal.getTime(), null);
 				stats.add(s);
 			}
 		}

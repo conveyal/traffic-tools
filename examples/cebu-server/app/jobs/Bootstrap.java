@@ -41,7 +41,7 @@ public class Bootstrap extends Job {
     
     	// generate gis export from graph
     	
-    	Logger.info("creating gis export...");
+    	/*Logger.info("creating gis export...");
     	
 		String exportName = "graph_gis";
 		
@@ -110,7 +110,6 @@ public class Bootstrap extends Job {
             		featureBuilder.add(geom);
             		featureBuilder.add(edgeId);
             		SimpleFeature feature = featureBuilder.buildFeature(null);
-            		Logger.info(feature.toString());
                     collection.add(feature);
          
     			}
@@ -145,6 +144,6 @@ public class Bootstrap extends Job {
 		catch(Exception e) {
 			Logger.info("Failed to write graph gis: " + e.toString());
 			e.printStackTrace();
-		}
+		}*/
 	}
 }

@@ -94,7 +94,7 @@ var endIcon = L.icon({
 });
 
 
-var mbAttrib = 'Traffic overlay powered by OpenPlans Vehicle Tracking Tools, Map tiles &copy; Mapbox (terms).';
+var mbAttrib = 'Traffic overlay powered by traffic engine, Map tiles &copy; Mapbox (terms).';
 var mbOptions = {
   maxZoom : 17,
   attribution : mbAttrib
@@ -221,7 +221,7 @@ function loadPath()
 	}
 
 	pathEdges = "";
-	$.get('/api/path?lat1=' + startMarker.getLatLng().lat + '&lon1=' + startMarker.getLatLng().lng + '&lat2=' + endMarker.getLatLng().lat + '&lon2=' + endMarker.getLatLng().lng + filter, function(data) {
+	$.get('/api/path?graphId=' + cityName + '&lat1=' + startMarker.getLatLng().lat + '&lon1=' + startMarker.getLatLng().lng + '&lat2=' + endMarker.getLatLng().lat + '&lon2=' + endMarker.getLatLng().lng + filter, function(data) {
 		
 		path = data;
 		
@@ -240,7 +240,8 @@ function loadStats()
 		return;
 
 	var queryParams = {
-		edgeIds: pathEdges
+		edgeIds: pathEdges,
+		graphId: cityName
 	}
 	
 	if(compareMaxHour && !(compareMaxHour == 23 && compareMinHour == 0)) {
@@ -269,7 +270,8 @@ function loadStats()
 	if(compare) {
 
 		queryParams = {
-			edgeIds: pathEdges
+			edgeIds: pathEdges,
+			graphId: cityName
 		}
 		
 		if(againstMaxHour && !(againstMaxHour == 23 && againstMinHour == 0)) {
@@ -481,7 +483,8 @@ function loadJourney(originLat, originLon, destinationLat, destinationLon) {
 function saveCsvPath() {
 
 	var queryParams = {
-		edgeIds: pathEdges
+		edgeIds: pathEdges,
+		graphId: cityName
 	}
 	
 	if(compareMaxHour && !(compareMaxHour == 23 && compareMinHour == 0)) {
@@ -521,6 +524,7 @@ function saveCsvPath() {
 function saveCsvAll() {
 
 	var queryParams = {
+			graphId: cityName
 	}
 	
 	if(compareMaxHour && !(compareMaxHour == 23 && compareMinHour == 0)) {

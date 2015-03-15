@@ -37,6 +37,7 @@ public class TrafficEdge implements Serializable {
 	
 	static final long serialVersionUID = 2;
 	
+	public final String graphName;
 	private final Integer id;
 	private final PlainStreetEdge edge;
 	private final String encodedGeom;
@@ -53,7 +54,10 @@ public class TrafficEdge implements Serializable {
 	
 	private Boolean hasTripLines = false;
 	
-	public TrafficEdge(PlainStreetEdge originalPse, Graph graph, RoutingRequest options) {
+	public TrafficEdge(String graphName, PlainStreetEdge originalPse, Graph graph, RoutingRequest options) {
+		
+		this.graphName = graphName;
+		
 		this.id = graph.getIdForEdge(originalPse);
 		this.edge = originalPse;
 	

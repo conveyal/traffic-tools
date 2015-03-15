@@ -81,6 +81,8 @@ public class TrafficGraph {
 	
 	private File trafficGraphFile;
 	
+	private final String graphName;
+	
 	private Graph graph;
 	private StreetVertexIndexServiceImpl indexService;
 	
@@ -93,13 +95,15 @@ public class TrafficGraph {
 	
 	private ConcurrentHashMap<Long, VehicleState> vehicles = new ConcurrentHashMap<Long, VehicleState>(8, 0.9f, 1);
 	private ConcurrentHashMap<String, Long> vehicleIds = new ConcurrentHashMap<String, Long>(8, 0.9f, 1);
-	private ConcurrentHashMap<Long, Long> vehicleUpdateLock = new ConcurrentHashMap<Long, Long>(8, 0.9f, 1);
+	private ConcurrentHashMap<Long, String> vehicleUpdateLock = new ConcurrentHashMap<Long, String>(8, 0.9f, 1);
 	
-	public TrafficGraph(String path) {
+	public TrafficGraph(String path, String graphName) {
+		
+		this.graphName = graphName;
 		
 		if(path != null)
 			this.load(path);
-
+	
 	}
 	
 	public RoutingRequest getOptions() {
@@ -176,7 +180,7 @@ public class TrafficGraph {
 				if(e instanceof PlainStreetEdge && !((PlainStreetEdge)e).canTraverse(defaultOptions))
 					continue;
 				
-				TrafficEdge te = new TrafficEdge((PlainStreetEdge)e, g.graph, defaultOptions);
+				TrafficEdge te = new TrafficEdge(g.graphName, (PlainStreetEdge)e, g.graph, defaultOptions);
 				
 				final Geometry geometry = te.getGeometry();
 				if (geometry != null) {
@@ -224,11 +228,6 @@ public class TrafficGraph {
 		}
 	}
 	
-	public TrafficGraph()
-	{
-
-	}
-	
 	public TrafficEdgeIndex getTraffEdgeIndex() {
 		return teIndex;
 	}
@@ -254,10 +253,10 @@ public class TrafficGraph {
 		return vehicleIds.get(imei);
 	}
 	
-	public Long getVehicleUpdateLock(Long vehicleId) {
+	public String getVehicleUpdateLock(Long vehicleId) {
 		
 		if(!vehicleUpdateLock.contains(vehicleId))
-			vehicleUpdateLock.put(vehicleId, new Long(0l));
+			vehicleUpdateLock.put(vehicleId, new String(vehicleId.toString()));
 		
 		return vehicleUpdateLock.get(vehicleId);
 	}

@@ -2,32 +2,4 @@
 
 #{set page:'citom' /}
 
-<div class="row-fluid" style="background-color: #fff;">
-
-	<div class="span3">
-	<ul class="nav nav-list" id="taxi_list">
-	  <li class="nav-header">
-	    Comparison Period
-	  </li>
-	  <li>
-	  	Hour: <span id="hourLabel">0</span>
-	  	<div id="slider"></div>	
-	  	
-	  	Day: 
-	  		<div id="datepicker"></div>	
-	  	
-	  </li>
-	  
-	  <li class="nav-header">
-	    Benchmark Routes
-	  </li>
-	 
-	</ul>
-	</div>
-	<div class="span9" style="margin: 0px;"">
-	<div id="map">
-	</div>
-	</div>
-</div>	 
-
-<script src="@{'/public/javascripts/cebu_citom.js'}"></script>
+{{latLon}}

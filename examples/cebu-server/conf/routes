@@ -10,6 +10,8 @@ WS 		/ws/location							Ws.location
 GET     /                                       Application.index
 GET     /recent                                 Application.recent
 
+GET     /traffic/{city}                         Citom.journey
+
 GET     /api/alerts/{type}                      Api.alerts
 
 GET     /citom/alerts/?                          Citom.alerts

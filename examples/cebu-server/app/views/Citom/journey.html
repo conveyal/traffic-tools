@@ -1,6 +1,124 @@
-#{extends 'main.html' /}
+<!DOCTYPE html>
+<html lang="en">
+<head>
 
-#{set page:'citom' /}
+	<link rel="stylesheet" href="@{'/public/javascripts/leaflet.css'}" />
+	<link rel="stylesheet" href="@{'/public/javascripts/lib/leaflet.label/leaflet.label.css'}" />
+	<link rel="stylesheet" href="@{'/public/bootstrap/boostrap.select2/select2.css'}" />
+
+	<link href="@{'/public/ui-lightness/jquery-ui-1.8.23.custom.css'}" rel="stylesheet">
+    <link href="@{'/public/bootstrap/css/bootstrap.css'}" rel="stylesheet">
+    <link href="@{'/public/bootstrap/css/bootstrap-datepicker.css'}" rel="stylesheet">
+    <link href="@{'/public/bootstrap/css/bootstrap-timepicker.css'}" rel="stylesheet">
+    
+    
+   <style type="text/css">
+      body {
+        padding: 0px;
+        background-color: #fff;	
+      }
+      
+      #content 
+      {
+      	padding: 0px;
+      	margin-top: 40px;
+      }
+      
+      #map
+      {
+      	width: 100%;
+      }
+    
+    </style>
+
+    <link href="@{'/public/bootstrap/css/bootstrap-responsive.min.css'}" rel="stylesheet">
+    
+    <title>${city} traffic</title>
+
+	<script>
+		
+		var cityName = "${city}";
+	
+		var defaultLatLon = [${latLon}];
+	
+	</script>
+
+</head>
+
+<body>
+
+	<div class="navbar navbar-inverse navbar-fixed-top" id="header">
+      <div class="navbar-inner">
+      	<a class="brand" href="/"><img style="margin-left: 10px;" src="/public/images/website_logo.png"/>&nbsp;${city} traffic</a>
+        <div class="nav-collapse collapse">
+        
+        
+        
+        	
+        </div>
+            
+          <div class="nav-collapse">
+         
+            <ul class="nav">
+            	
+          
+	           	#{secure.check 'citom'}
+	            	<li class="dropdown#{if page == 'citom'} active#{/if}">
+	            	<a href="#" class="dropdown-toggle" data-toggle="dropdown">CITOM Portal<b class="caret"></b></a>
+	            		<ul class="dropdown-menu">
+	            			<li><a href="@{Citom.incidents}">Traffic Alerts</a></li>
+	     		 			<li><a href="@{Citom.journey}">Journey Time Analysis</a></li>
+	     		 			<li><a href="@{Citom.conditions}">Current Traffic Conditions</a></li>
+	     		 			<!--  <li><a href="@{Citom.area}">Area Analysis</a></li> -->
+	    				</ul>
+	    			</li>
+	   			#{/secure.check}
+              
+	            #{secure.check 'taxi'}
+	            	<li class="dropdown#{if page == 'taxi'} active#{/if}">
+	            	<a href="#" class="dropdown-toggle" data-toggle="dropdown">Taxi Dispatch<b class="caret"></b></a>
+	            		<ul class="dropdown-menu">
+	            			<li><a href="@{Taxi.index}">Dispatch</a></li>	
+	            			<li><a href="@{Taxi.omReport}">Vehicle O/M Reports</a></li>  
+	    				</ul>
+	            	
+	            	</li>
+	            #{/secure.check}
+	            #{secure.check 'admin'}
+	            	<li class="dropdown#{if page == 'admin'} active#{/if}">
+	            	<a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin<b class="caret"></b></a>
+	            		<ul class="dropdown-menu">
+	            			<li><a href="@{Admin.accounts}">Account Management</a></li>	
+	            			<li><a href="@{Admin.systemStatus}">System Status</a></li>		            		 
+	    				</ul>
+	    			</li>
+	            #{/secure.check}
+	              
+            </ul>
+          </div>
+          
+          
+        </div>
+      </div>
+    </div>
+   
+#{script "jquery.js"/}
+#{script "leaflet-src.js"/}
+#{script "handlebars.js"/}
+#{script "underscore-min.js"/}
+<script src="@{'/public/bootstrap/js/bootstrap.min.js'}"></script>
+<script src="@{'/public/bootstrap/js/bootstrap-datepicker.js'}"></script>
+<script src="@{'/public/bootstrap/js/bootstrap-timepicker.js'}"></script>
+<script src="@{'/public/bootstrap/boostrap.select2/select2.min.js'}"></script>
+#{script "backbone.js"/}
+
+#{script "lib/leaflet.label/leaflet.label-src.js"/}
+#{script "lib/moment.js"/}
+
+
+    <div class="container-fluid" id="content">
+    
+    	
 
 <script id="incidentSave" type="text/html">
 <h3>Create Incident</h3><br/> 	
@@ -197,6 +315,7 @@ New message:
 </div>
 
 
+
 <script src="@{'/public/javascripts/jquery-ui.js'}"></script>
 
 <script src="@{'/public/javascripts/jquery-ui.js'}"></script>
@@ -204,3 +323,10 @@ New message:
 <script src="@{'/public/javascripts/cebu_journey.js'}"></script>
 <script src="@{'/public/javascripts/Blob.js'}"></script>
 <script src="@{'/public/javascripts/FileSaver.js'}"></script>
+    
+    </div>
+
+
+</body>
+    
+</html>
