@@ -73,8 +73,8 @@ public class Api extends Controller {
 	
 	public static DistanceCache distanceCache = new DistanceCache();
 	
-	public static TrafficGraph jakataGraph = null;//new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath") + "/jakarta", "jakarta");
-	public static TrafficGraph manilaGraph = null; //new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath") + "/manila", "manila");
+	public static TrafficGraph jakataGraph = new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath") + "/jakarta", "jakarta");
+	public static TrafficGraph manilaGraph = new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath") + "/manila", "manila");
 	public static TrafficGraph cebuGraph = new TrafficGraph(Play.configuration.getProperty("application.otpGraphPath") + "/cebu", "cebu");
 	
 	public static TrafficGraph getGraph(String graphId) {
